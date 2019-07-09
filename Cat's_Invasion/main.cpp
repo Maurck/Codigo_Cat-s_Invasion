@@ -9,21 +9,22 @@ using namespace std;
 using namespace sf;
 
 
-
 class Jugador {
 	
 private:
 	
 	float x, y;
-	int velocidad=3.5;
+	float velocidad=3.5;
 
 public:
 	
 	Texture Tperro;
 	Sprite Sperro;
+	RenderWindow* ventana;
 
-	Jugador(float x,float y)
+	Jugador(float x,float y,RenderWindow *ventana)
 	{
+		this->ventana = ventana;
 		this->x = x;
 		this->y = y;
 
@@ -37,29 +38,97 @@ public:
 
 	void update()
 	{
-		if (Keyboard::isKeyPressed(Keyboard::D))
+		if (Keyboard::isKeyPressed(Keyboard::Left))
 		{
-			x+=velocidad;
+			x-=velocidad;
 			Sperro.setPosition(x,y);
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::A))
+		if (Keyboard::isKeyPressed(Keyboard::Right))
 		{
-			x-=velocidad;
+			x+=velocidad;
 			Sperro.setPosition(x, y);
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::W))
+		if (Keyboard::isKeyPressed(Keyboard::Up))
 		{
 			y-=velocidad;
 			Sperro.setPosition(x, y);
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::S))
+		if (Keyboard::isKeyPressed(Keyboard::Down))
 		{
 			y+=velocidad;
 			Sperro.setPosition(x, y);
 		}
+	}
+
+	void render()
+	{
+		this->ventana->draw(this->Sperro);
+	}
+};
+
+class Nivel
+{
+public:
+	Texture Tfondo;
+	Sprite Sfondo;
+	RenderWindow* ventana;
+	Event evento;
+	bool nivel_activo = true;
+
+	Jugador *j;
+
+	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento)
+	{
+		this->ventana = ventana;
+		this->evento = evento;
+
+		Tfondo.loadFromFile(ruta_fondo);
+		Sfondo.setTexture(Tfondo);
+		Sfondo.setScale(Vector2f(ventana_escala.x/Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
+		
+		j = new Jugador(10, 10, ventana);
+	}
+
+	void loop()
+	{
+		while (nivel_activo)
+		{
+			eventos();
+			
+			update();
+
+			render();
+		}
+	}
+
+	void update()
+	{
+		this->j->update();
+	}
+
+	void eventos()
+	{
+		while (this->ventana->pollEvent(this->evento))
+		{
+			if (this->evento.type == Event::Closed)
+			{
+				this->ventana->close();
+				exit(1);
+			}
+		}
+	}
+
+	void render()
+	{
+		this->ventana->clear();
+		
+		this->ventana->draw(this->Sfondo);
+		this->j->render();
+
+		this->ventana->display();
 	}
 };
 
@@ -69,15 +138,18 @@ class Juego
 
 	int altura, anchura;
 	RenderWindow *ventana;
-	Jugador j = Jugador(10,10);
 	Event evento;
+	Nivel *n1;
 
 	public:
 
 	Juego(int altura,int anchura)
 	{
+		
 		this->ventana = new RenderWindow(VideoMode(altura, anchura), "Cat's Invasion");
 		this->ventana->setFramerateLimit(60);
+		
+		n1 = new Nivel("Texturas/cuarto.jpg", ventana->getSize(),this->ventana,this->evento);
 
 		loop();
 	}
@@ -86,11 +158,7 @@ class Juego
 	{
 		while (this->ventana->isOpen())
 		{
-			eventos();
-
-			update();
-			
-			render();
+			n1->loop();
 		}
 	}
 
@@ -99,20 +167,24 @@ class Juego
 		while (this->ventana->pollEvent(this->evento))
 		{
 			if (this->evento.type == Event::Closed)
+			{
 				this->ventana->close();
+				exit(1);
+			}
 		}
 	}
 
 	void update()
 	{
-		this->j.update();
+		this->n1->j->update();
 	}
 	
 	void render()
 	{
 		this->ventana->clear();
 
-		this->ventana->draw(this->j.Sperro);
+		this->n1->render();
+		this->n1->j->render();
 		
 		this->ventana->display();
 
