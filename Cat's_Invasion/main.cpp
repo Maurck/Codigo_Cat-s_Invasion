@@ -9,6 +9,87 @@ using namespace std;
 using namespace sf;
 
 
+class Texto{
+
+private:
+	Font fuente;
+	Text texto;
+	RenderWindow* ventana;
+	int tamaño;
+	string mensaje;
+	string fuentes;
+	float pos_x, pos_y;
+	Color color;
+
+public:
+	Texto(RenderWindow* ventana,string fuentes,string mensaje,Color color,int tamaño)
+	{
+		this->ventana = ventana;
+		this->mensaje = mensaje;
+		this->tamaño = tamaño;
+		this->fuente = fuente;
+		this->color = color;
+
+		fuente.loadFromFile(fuentes);
+		texto.setFont(fuente);
+		texto.setCharacterSize(tamaño);
+		texto.setString(mensaje);
+		texto.setFillColor(color);
+	}
+
+	float getSize_x()
+	{
+		return this->texto.getGlobalBounds().width;
+	}
+
+	float getSize_y()
+	{
+		return this->texto.getGlobalBounds().height;
+
+	}
+
+	void setPos(float x, float y)
+	{
+		texto.setPosition(x, y);
+	}
+
+	void render()
+	{
+		this->ventana->draw(this->texto);
+	}
+};
+
+class Puntero {
+
+	private:
+		float x, y;
+		Texture Tpuntero;
+		Sprite Spuntero;
+		string textura;
+		RenderWindow* ventana;
+		int opcion;
+
+	public:
+		Puntero(int x, int y,RenderWindow* ventana)
+		{
+			this->textura = textura;
+			this->ventana = ventana;
+			Tpuntero.loadFromFile(textura);
+			Spuntero.setPosition(x, y);
+			Spuntero.setScale(Vector2f(0.1, 0.1));
+		}
+
+		void update()
+		{
+
+		}
+
+		void render()
+		{
+			this->ventana->draw(this->Spuntero);
+		}
+};
+
 class Jugador {
 	
 private:
@@ -89,7 +170,7 @@ public:
 		Sfondo.setTexture(Tfondo);
 		Sfondo.setScale(Vector2f(ventana_escala.x/Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
 		
-		j = new Jugador(10, 10, ventana);
+		j = new Jugador(40, 80, ventana);
 	}
 
 	void loop()
@@ -132,6 +213,79 @@ public:
 	}
 };
 
+class Menu
+{
+	private:
+
+		RenderWindow* ventana;
+		Event evento;
+		Texture Tmenu;
+		Sprite Smenu;
+		bool menu_activo = true;
+		Texto *cats_invasion,*jugar;
+		Puntero p1;
+
+	public:
+		Menu(RenderWindow *ventana, Vector2u ventana_escala, Event evento)
+		{
+			this->ventana = ventana;
+			Tmenu.loadFromFile("Texturas/menu.jpg");
+			Smenu.setTexture(Tmenu);
+			Smenu.setScale(Vector2f(ventana_escala.x / Smenu.getGlobalBounds().width, ventana_escala.y / Smenu.getGlobalBounds().height));
+
+			cats_invasion = new Texto(this->ventana, "Fuentes/FuenteNormal.ttf", "Cat's Invasion", Color::Blue, 50);
+			cats_invasion->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f, this->ventana->getSize().y / 6.f);
+
+			jugar = new Texto(this->ventana, "Fuentes/FuenteNormal.ttf", "1.Jugar", Color::Black, 40);
+			jugar->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->ventana->getSize().y / 6.f + 100.f);
+		}
+
+		void loop()
+		{
+			while (menu_activo)
+			{
+				eventos();
+
+				update();
+
+				render();
+			}
+
+		}
+
+		void update()
+		{
+			if (Keyboard::isKeyPressed(Keyboard::Enter))
+				menu_activo = false;
+
+		}
+
+		void eventos()
+		{
+			while (this->ventana->pollEvent(this->evento))
+			{
+				if (this->evento.type == Event::Closed)
+				{
+					this->ventana->close();
+					exit(1);
+				}
+			}
+		}
+
+		void render()
+		{
+			this->ventana->clear();
+
+			this->ventana->draw(this->Smenu);
+			this->cats_invasion->render();
+			this->jugar->render();
+
+			this->ventana->display();
+			
+		}
+
+};
+
 class Juego
 {
 	private:
@@ -140,6 +294,7 @@ class Juego
 	RenderWindow *ventana;
 	Event evento;
 	Nivel *n1;
+	Menu *menu;
 
 	public:
 
@@ -150,6 +305,7 @@ class Juego
 		this->ventana->setFramerateLimit(60);
 		
 		n1 = new Nivel("Texturas/cuarto.jpg", ventana->getSize(),this->ventana,this->evento);
+		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
 
 		loop();
 	}
@@ -158,6 +314,7 @@ class Juego
 	{
 		while (this->ventana->isOpen())
 		{
+			menu->loop();
 			n1->loop();
 		}
 	}
