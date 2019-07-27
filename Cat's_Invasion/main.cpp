@@ -48,6 +48,16 @@ public:
 
 	}
 
+	float getPos_x()
+	{
+		return this->texto.getPosition().x;
+	}
+
+	float getPos_y()
+	{
+		return this->texto.getPosition().y;
+	}
+
 	void setPos(float x, float y)
 	{
 		texto.setPosition(x, y);
@@ -67,26 +77,89 @@ class Puntero {
 		Sprite Spuntero;
 		string textura;
 		RenderWindow* ventana;
-		int opcion;
+		int opcion = 1, timer, delay = 80;
 
 	public:
-		Puntero(int x, int y,RenderWindow* ventana)
+		Puntero(string textura,RenderWindow* ventana)
 		{
 			this->textura = textura;
 			this->ventana = ventana;
 			Tpuntero.loadFromFile(textura);
-			Spuntero.setPosition(x, y);
-			Spuntero.setScale(Vector2f(0.1, 0.1));
+			Spuntero.setTexture(Tpuntero);
+			Spuntero.setScale(Vector2f(0.2, 0.2));
+			timer = delay;
 		}
 
 		void update()
 		{
+			if (timer < delay)
+				timer++;
+				
+			if (Keyboard::isKeyPressed(Keyboard::S) && timer == delay)
+			{
+				
+				if (opcion == 2)
+				{
+					Spuntero.setPosition(x, y);
+					opcion = 1;
+				}
+				else
+				{
+					Spuntero.move(0.f, 50.f);
+					opcion++;
+				}
+				timer = 0;
+			}
 
+			if (Keyboard::isKeyPressed(Keyboard::W) && timer == delay)
+			{
+
+				if (opcion == 1)
+				{
+					Spuntero.setPosition(x, y + 50);
+					opcion = 2;
+				}
+				else
+				{
+					Spuntero.move(0.f, -50.f);
+					opcion--;
+				}
+				timer = 0;
+			}
+
+			cout << opcion << endl;
 		}
 
 		void render()
 		{
 			this->ventana->draw(this->Spuntero);
+		}
+
+		float getSize_x()
+		{
+			return this->Spuntero.getGlobalBounds().width;
+		}
+
+		float getSize_y()
+		{
+			return this->Spuntero.getGlobalBounds().height;
+
+		}
+		
+		void setPos(float x, float y)
+		{
+			Spuntero.setPosition(x, y);
+		}
+
+		void setInitPos(float x, float y)
+		{
+			this->x = x;
+			this->y = y;
+		}
+
+		int getOpc()
+		{
+			return this->opcion;
 		}
 };
 
@@ -222,10 +295,11 @@ class Menu
 		Texture Tmenu;
 		Sprite Smenu;
 		bool menu_activo = true;
-		Texto *cats_invasion,*jugar;
-		Puntero p1;
+		Texto *cats_invasion,*jugar,*salir;
 
 	public:
+		Puntero* p1;
+
 		Menu(RenderWindow *ventana, Vector2u ventana_escala, Event evento)
 		{
 			this->ventana = ventana;
@@ -238,6 +312,13 @@ class Menu
 
 			jugar = new Texto(this->ventana, "Fuentes/FuenteNormal.ttf", "1.Jugar", Color::Black, 40);
 			jugar->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->ventana->getSize().y / 6.f + 100.f);
+
+			p1 = new Puntero("Texturas/apuntador.png", this->ventana);
+			p1->setPos(this->jugar->getPos_x() - p1->getSize_x(), this->jugar->getPos_y() + this->jugar->getSize_y() / 4);
+			p1->setInitPos(this->jugar->getPos_x() - p1->getSize_x(), this->jugar->getPos_y() + this->jugar->getSize_y() / 4);
+
+			salir = new Texto(this->ventana, "Fuentes/FuenteNormal.ttf", "2.Salir", Color::Black, 40);
+			salir->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->ventana->getSize().y / 6.f + 150.f);
 		}
 
 		void loop()
@@ -258,6 +339,7 @@ class Menu
 			if (Keyboard::isKeyPressed(Keyboard::Enter))
 				menu_activo = false;
 
+			this->p1->update();
 		}
 
 		void eventos()
@@ -278,7 +360,9 @@ class Menu
 
 			this->ventana->draw(this->Smenu);
 			this->cats_invasion->render();
+			this->p1->render();
 			this->jugar->render();
+			this->salir->render();
 
 			this->ventana->display();
 			
@@ -295,6 +379,7 @@ class Juego
 	Event evento;
 	Nivel *n1;
 	Menu *menu;
+	bool jugando = true;
 
 	public:
 
@@ -312,10 +397,23 @@ class Juego
 
 	void loop()
 	{
-		while (this->ventana->isOpen())
+		
+		while (this->ventana->isOpen() && jugando)
 		{
 			menu->loop();
-			n1->loop();
+
+			switch (this->menu->p1->getOpc())
+			{
+				case 1:
+					n1->loop();
+					break;
+				case 2:
+					this->ventana->close();
+					jugando = false;
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
@@ -351,7 +449,6 @@ class Juego
 int main()
 {
 	Juego j(800, 640);
-	
-	system("pause");
+
 	return 0;
 }
