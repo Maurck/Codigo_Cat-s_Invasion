@@ -8,6 +8,50 @@
 using namespace std;
 using namespace sf;
 
+class Animacion {
+private:
+	Vector2u numImagenes;
+	Vector2u imagenActual;
+
+	float tiempoTotal;
+	float tiempoCambio;
+
+public:
+	IntRect uvRect;
+
+	Animacion(Texture* textura, Vector2u numImagenes, float tiempoCambio)
+	{
+		this->numImagenes = numImagenes;
+		this->tiempoCambio = tiempoCambio;
+		tiempoTotal = 0.0f;
+
+		imagenActual.x = 0;
+
+		uvRect.width = textura->getSize().x / float(numImagenes.x);
+		uvRect.height = textura->getSize().y / float(numImagenes.y);
+	}
+
+	void update(int fila, float deltaTime)
+	{
+		imagenActual.y = fila;
+		tiempoTotal += deltaTime;
+
+		if (tiempoTotal >= tiempoCambio)
+		{
+			tiempoTotal -= tiempoCambio;
+			imagenActual.x++;
+		}
+
+		if (imagenActual.x >= numImagenes.x)
+			imagenActual.x = 0;
+
+		uvRect.left = imagenActual.x * uvRect.width;
+		uvRect.top = imagenActual.y * uvRect.height;
+
+		cout << deltaTime << endl;
+	}
+};
+
 
 class Texto{
 
@@ -77,7 +121,7 @@ class Puntero {
 		Sprite Spuntero;
 		string textura;
 		RenderWindow* ventana;
-		int opcion = 1, timer, delay = 80;
+		int opcion = 1, timer, delay = 10;
 
 	public:
 		Puntero(string textura,RenderWindow* ventana)
@@ -95,7 +139,7 @@ class Puntero {
 			if (timer < delay)
 				timer++;
 				
-			if (Keyboard::isKeyPressed(Keyboard::S) && timer == delay)
+			if (Keyboard::isKeyPressed(Keyboard::Down) && timer == delay)
 			{
 				
 				if (opcion == 2)
@@ -111,7 +155,7 @@ class Puntero {
 				timer = 0;
 			}
 
-			if (Keyboard::isKeyPressed(Keyboard::W) && timer == delay)
+			if (Keyboard::isKeyPressed(Keyboard::Up) && timer == delay)
 			{
 
 				if (opcion == 1)
@@ -127,7 +171,6 @@ class Puntero {
 				timer = 0;
 			}
 
-			cout << opcion << endl;
 		}
 
 		void render()
@@ -168,15 +211,17 @@ class Jugador {
 private:
 	
 	float x, y;
-	float velocidad=3.5;
+	float velocidad=7;
+	float deltaTime = 0.0f;
 
 public:
 	
 	Texture Tperro;
 	Sprite Sperro;
 	RenderWindow* ventana;
+	
 
-	Jugador(float x,float y,RenderWindow *ventana)
+	Jugador(float x, float y, RenderWindow* ventana)
 	{
 		this->ventana = ventana;
 		this->x = x;
@@ -186,41 +231,51 @@ public:
 			cout << "No se pudo cargar la textura" << endl;
 
 		Sperro.setTexture(Tperro);
-		Sperro.setPosition(x, y);	
+		Sperro.setPosition(x, y);
 		Sperro.setScale(Vector2f(0.05f, 0.05f));
+
 	}
 
 	void update()
 	{
 		if (Keyboard::isKeyPressed(Keyboard::Left))
 		{
-			x-=velocidad;
-			Sperro.setPosition(x,y);
+			if(Sperro.getPosition().x > 0)
+			{
+				Sperro.move(-velocidad, 0.f);
+			}
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Right))
 		{
-			x+=velocidad;
-			Sperro.setPosition(x, y);
+			if (Sperro.getPosition().x < ventana->getSize().x - Sperro.getGlobalBounds().width)
+			{
+				Sperro.move(velocidad, 0.f);
+			}
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Up))
 		{
-			y-=velocidad;
-			Sperro.setPosition(x, y);
+			if (Sperro.getPosition().y > 0)
+			{
+				Sperro.move(0.f, -velocidad);
+			}
 		}
 
 		if (Keyboard::isKeyPressed(Keyboard::Down))
 		{
-			y+=velocidad;
-			Sperro.setPosition(x, y);
+			if (Sperro.getPosition().y < ventana->getSize().y - Sperro.getGlobalBounds().height)
+			{
+				Sperro.move(0.f, velocidad);
+			}
 		}
 	}
 
 	void render()
 	{
-		this->ventana->draw(this->Sperro);
+		this->ventana->draw(Sperro);
 	}
+
 };
 
 class Nivel
@@ -228,9 +283,14 @@ class Nivel
 public:
 	Texture Tfondo;
 	Sprite Sfondo;
+	Texture Tniño;
+	RectangleShape Sniño;
+	Animacion* niño;
 	RenderWindow* ventana;
 	Event evento;
 	bool nivel_activo = true;
+	float deltaTime = 0.0f;
+	Clock reloj;
 
 	Jugador *j;
 
@@ -244,12 +304,20 @@ public:
 		Sfondo.setScale(Vector2f(ventana_escala.x/Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
 		
 		j = new Jugador(40, 80, ventana);
+
+		Tniño.loadFromFile("Texturas/niñoAnim.jpg");
+		Sniño.setSize(Vector2f(300.f, 400.f));
+		Sniño.setTexture(&Tniño);
+
+		niño = new Animacion(&Tniño, Vector2u(9,1), 0.1f);
 	}
 
 	void loop()
 	{
 		while (nivel_activo)
 		{
+			deltaTime = reloj.restart().asSeconds();
+
 			eventos();
 			
 			update();
@@ -261,6 +329,8 @@ public:
 	void update()
 	{
 		this->j->update();
+		niño->update(0, deltaTime);
+		Sniño.setTextureRect(niño->uvRect);
 	}
 
 	void eventos()
@@ -281,6 +351,7 @@ public:
 		
 		this->ventana->draw(this->Sfondo);
 		this->j->render();
+		this->ventana->draw(Sniño);
 
 		this->ventana->display();
 	}
@@ -297,6 +368,9 @@ class Menu
 		bool menu_activo = true;
 		Texto *cats_invasion,*jugar,*salir;
 
+		Texture TdogeMenu;
+		Sprite SdogeMenu;
+
 	public:
 		Puntero* p1;
 
@@ -309,6 +383,11 @@ class Menu
 
 			cats_invasion = new Texto(this->ventana, "Fuentes/FuenteNormal.ttf", "Cat's Invasion", Color::Blue, 50);
 			cats_invasion->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f, this->ventana->getSize().y / 6.f);
+
+			TdogeMenu.loadFromFile("Texturas/dogeMenu.png");
+			SdogeMenu.setTexture(TdogeMenu);
+			SdogeMenu.setScale(0.2f, 0.2f);			
+			SdogeMenu.setPosition(cats_invasion->getPos_x() + cats_invasion->getSize_x() + 10, cats_invasion->getPos_y() -  SdogeMenu.getGlobalBounds().height / 5);
 
 			jugar = new Texto(this->ventana, "Fuentes/FuenteNormal.ttf", "1.Jugar", Color::Black, 40);
 			jugar->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->ventana->getSize().y / 6.f + 100.f);
@@ -360,6 +439,7 @@ class Menu
 
 			this->ventana->draw(this->Smenu);
 			this->cats_invasion->render();
+			this->ventana->draw(this->SdogeMenu);
 			this->p1->render();
 			this->jugar->render();
 			this->salir->render();
@@ -388,6 +468,7 @@ class Juego
 		
 		this->ventana = new RenderWindow(VideoMode(altura, anchura), "Cat's Invasion");
 		this->ventana->setFramerateLimit(60);
+		this->ventana->setPosition(Vector2i(250, 50));
 		
 		n1 = new Nivel("Texturas/cuarto.jpg", ventana->getSize(),this->ventana,this->evento);
 		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
@@ -439,7 +520,6 @@ class Juego
 		this->ventana->clear();
 
 		this->n1->render();
-		this->n1->j->render();
 		
 		this->ventana->display();
 
