@@ -1,0 +1,23 @@
+﻿  main.cpp
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(30,39): warning C4244:  '=': conversión de 'float' a 'T'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(30,39): warning C4244:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(30,39): warning C4244:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(30,39): warning C4244:             T=int
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(30,39): warning C4244:         ]
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,40): warning C4244:  '=': conversión de 'float' a 'T'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,40): warning C4244:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,40): warning C4244:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,40): warning C4244:             T=int
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,40): warning C4244:         ]
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(246,56): warning C4244:  'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(246,56): warning C4244:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(246,56): warning C4244:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(246,56): warning C4244:             T=float
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(246,56): warning C4244:         ]
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(541,52): warning C4244:  'argumento': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(549,1): warning C4305:  'argumento': truncamiento de 'double' a 'T'
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(549,1): warning C4305:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(549,1): warning C4305:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(549,1): warning C4305:             T=float
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(549,1): warning C4305:         ]
+  Cat's_Invasion.vcxproj -> C:\Users\User\Desktop\Github\Cat's_Invasion\Debug\Cat's_Invasion.exe

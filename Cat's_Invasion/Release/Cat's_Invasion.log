@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(37,1): error C4996:  'sf::Text::setColor': se declaró desusado
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\include\SFML\Graphics\Text.hpp(210): message :  vea la declaración de 'sf::Text::setColor'
