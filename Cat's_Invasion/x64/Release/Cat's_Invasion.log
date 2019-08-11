@@ -1,0 +1,23 @@
+﻿  main.cpp
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,39): warning C4244:  '=': conversión de 'float' a 'T'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,39): warning C4244:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,39): warning C4244:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,39): warning C4244:             T=int
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(31,39): warning C4244:         ]
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(32,40): warning C4244:  '=': conversión de 'float' a 'T'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(32,40): warning C4244:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(32,40): warning C4244:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(32,40): warning C4244:             T=int
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(32,40): warning C4244:         ]
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(247,56): warning C4244:  'argumento': conversión de 'double' a 'T'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(247,56): warning C4244:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(247,56): warning C4244:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(247,56): warning C4244:             T=float
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(247,56): warning C4244:         ]
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(542,52): warning C4244:  'argumento': conversión de 'double' a 'float'; posible pérdida de datos
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(550,1): warning C4305:  'argumento': truncamiento de 'double' a 'T'
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(550,1): warning C4305:         with
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(550,1): warning C4305:         [
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(550,1): warning C4305:             T=float
+C:\Users\User\Desktop\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(550,1): warning C4305:         ]
+sfml-window.lib(sfml-window-2.dll) : fatal error LNK1112: tipo de equipo del módulo 'x86' en conflicto con tipo de equipo de destino 'x64'

@@ -1,9 +1,11 @@
 #include <iostream>
 #include <SFML/System.hpp>
+#include <SFML/Window.hpp>
 #include <SFML/audio.hpp>
 #include <SFML/Config.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <vector>
 
 using namespace std;
 using namespace sf;
@@ -222,7 +224,7 @@ class Personaje {
 	
 private:
 
-	float velocidad=100;
+	float velocidad=500;
 	float deltaTime = 0.0f;
 	bool miraDerecha = true;
 	Texture Tniño;
@@ -246,7 +248,7 @@ public:
 		niño.setPosition(Vector2f(0.0f,ventana->getSize().y - niño.getSize().y * 2.1));
 	}
 
-	void update(RenderWindow* ventana)
+	void update(RenderWindow* ventana,float deltaTime)
 	{
 		Vector2f movimiento(0.0f, 0.0f);
 
@@ -274,10 +276,6 @@ public:
 		ventana->draw(niño);
 	}
 
-	void getDeltaTime(float deltaTime)
-	{
-		this->deltaTime = deltaTime;
-	}
 
 	bool salioDePantalla()
 	{
@@ -297,22 +295,23 @@ private:
 	float deltaTime = 0.0f;
 	bool miraDerecha = true;
 	Texture Tperro;
-	Sprite Sperro;
-
+	
 public:
+	Sprite Sperro;
+	int vida = 3;
 
 	Jugador(Vector2f initPos, RenderWindow* ventana)
 	{
 
-		if (!Tperro.loadFromFile("Texturas/doge.png"))
+		if (!Tperro.loadFromFile("Texturas/dogeCartoon.png"))
 			cout << "No se pudo cargar la textura" << endl;
 
 		Sperro.setTexture(Tperro);
 		Sperro.setPosition(initPos);
-		Sperro.setScale(Vector2f(0.05f, 0.05f));
+		Sperro.setScale(Vector2f(0.1f, 0.1f));
 	}
 
-	void update(RenderWindow* ventana)
+	void update(RenderWindow* ventana,float deltaTime)
 	{
 
 		if (Keyboard::isKeyPressed(Keyboard::Left))
@@ -355,9 +354,111 @@ public:
 
 	}
 
-	void getDeltaTime(float deltaTime)
+};
+
+class Enemigo {
+
+private:
+	Texture Tenemigo;
+	RenderWindow* ventana;
+public:
+	Sprite Senemigo;
+	Enemigo(RenderWindow* ventana, string textura, Vector2f escala)
 	{
-		this->deltaTime = deltaTime;
+		this->ventana = ventana;
+		Tenemigo.loadFromFile(textura);
+		Senemigo.setTexture(Tenemigo);
+		Senemigo.setScale(escala);
+	}
+
+	void render()
+	{
+		ventana->draw(Senemigo);
+	}
+
+	void setPosition(Vector2f pos)
+	{
+		Senemigo.setPosition(pos);
+	}
+
+	void move(Vector2f mov)
+	{
+		Senemigo.move(mov);
+	}
+
+	Vector2f getPosition()
+	{
+		return Senemigo.getPosition();
+	}
+
+	FloatRect getSize()
+	{
+		return Senemigo.getGlobalBounds();
+	}
+
+};
+
+class Spawner {
+private:
+	
+	Enemigo enemigo;
+	RenderWindow* ventana;
+	int spawnTimer,spawnDelay;
+	float velocidad;
+
+public:
+	vector<Enemigo> enemigos;
+
+	Spawner(RenderWindow* ventana, string textura, Vector2f escala, int spawnDelay,float velocidad) : enemigo(ventana,textura,escala)
+	{
+		this->velocidad = velocidad;
+		this->spawnDelay = spawnDelay;
+		this->ventana = ventana;
+		spawnTimer = this->spawnDelay;
+	}
+
+	void update(Jugador &jugador)
+	{
+		for (size_t i = 0; i < enemigos.size(); i++)
+		{
+			enemigos[i].move(Vector2f(-velocidad, 0.0f));
+
+			if (enemigos[i].getPosition().x < -enemigo.getSize().width)
+			{
+				enemigos.erase(enemigos.begin() + i);
+			}
+		}
+		cout << enemigos.size() << endl;
+		
+		
+		if (spawnTimer <= spawnDelay)
+			spawnTimer++;
+
+		if (spawnTimer > spawnDelay)
+		{
+			enemigo.setPosition(Vector2f(ventana->getSize().x,rand()%int(ventana->getSize().y - enemigo.getSize().height)));
+			enemigos.push_back(Enemigo(enemigo));
+			spawnTimer = 0;
+		}
+
+		for (size_t i = 0; i < enemigos.size(); i++)
+		{
+			if (jugador.Sperro.getGlobalBounds().intersects(enemigos[i].Senemigo.getGlobalBounds()))
+			{
+				enemigos.erase(enemigos.begin() + i);
+				jugador.vida--;
+			}
+		}
+
+		cout << jugador.vida;
+	}
+
+	void render()
+	{
+		for (size_t i = 0; i < enemigos.size(); i++)
+		{
+			enemigos[i].render();
+		}
 	}
 
 };
@@ -371,10 +472,11 @@ public:
 	Event evento;
 	bool nivel_activo = true;
 	float deltaTime = 0.0f;
+	Spawner gatos;
+	Jugador perro;
 
-	Jugador *j;
-
-	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento)
+	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento) 
+		: gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),50,5) , perro(Vector2f(40.f, 80.f), ventana)
 	{
 		this->ventana = ventana;
 		this->evento = evento;
@@ -382,15 +484,16 @@ public:
 		Tfondo.loadFromFile(ruta_fondo);
 		Sfondo.setTexture(Tfondo);
 		Sfondo.setScale(Vector2f(ventana_escala.x/Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
-		
-		j = new Jugador(Vector2f(40.f,80.f),ventana);
+	
 	}
 
 	void loop()
 	{
 		Clock reloj;
+		srand(time(NULL));
+		perro.vida = 3;
 
-		while (nivel_activo)
+		while (nivel_activo && perro.vida > 0)
 		{
 			deltaTime = reloj.restart().asSeconds();
 
@@ -404,17 +507,18 @@ public:
 
 	void update()
 	{
-		this->j->getDeltaTime(deltaTime);
-		this->j->update(ventana);
+		perro.update(ventana,deltaTime);
+
+		gatos.update(perro);
 	}
 
 	void eventos()
 	{
-		while (this->ventana->pollEvent(this->evento))
+		while (ventana->pollEvent(evento))
 		{
-			if (this->evento.type == Event::Closed)
+			if (evento.type == Event::Closed)
 			{
-				this->ventana->close();
+				ventana->close();
 				exit(1);
 			}
 		}
@@ -422,12 +526,12 @@ public:
 
 	void render()
 	{
-		this->ventana->clear();
+		ventana->clear();
 		
-		this->ventana->draw(this->Sfondo);
-		this->j->render(ventana);
-
-		this->ventana->display();
+		ventana->draw(Sfondo);
+		perro.render(ventana);
+		gatos.render();
+		ventana->display();
 	}
 };
 
@@ -436,16 +540,21 @@ class Intro
 public:
 	Texture Tfondo;
 	Sprite Sfondo;
+
 	RenderWindow* ventana;
+
 	Event evento;
+
 	Texto historia;
+
 	bool intro_activo = true;
 	float deltaTime = 0.0f;
 
-	Personaje* niño;
+	Personaje niño;
 
 	Intro(string ruta_fondo, Vector2u ventana_escala, RenderWindow* ventana, Event evento) :
-		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de billy, \nun niño que solo queria ser feliz",Color::Black, 30)
+		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de billy, \nun niño que solo queria ser feliz",Color::Black, 80) 
+		, niño(Vector2f(40.f, 80.f), ventana)
 	{
 		this->ventana = ventana;
 		this->evento = evento;
@@ -456,7 +565,6 @@ public:
 		Sfondo.setTexture(Tfondo);
 		Sfondo.setScale(Vector2f(ventana_escala.x / Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
 
-		niño = new Personaje(Vector2f(40.f, 80.f), ventana);
 	}
 
 	void loop()
@@ -477,10 +585,9 @@ public:
 
 	void update()
 	{
-		this->niño->getDeltaTime(deltaTime);
-		this->niño->update(ventana);
+		niño.update(ventana,deltaTime);
 
-		if (niño->salioDePantalla())
+		if (niño.salioDePantalla())
 			intro_activo = false;
 	}
 
@@ -498,13 +605,13 @@ public:
 
 	void render()
 	{
-		this->ventana->clear();
+		ventana->clear();
 
-		this->ventana->draw(this->Sfondo);
-		this->niño->render(ventana);
-		this->historia.render();
+		ventana->draw(this->Sfondo);
+		niño.render(ventana);
+		historia.render();
 
-		this->ventana->display();
+		ventana->display();
 	}
 };
 
@@ -528,6 +635,7 @@ class Menu
 		Menu(RenderWindow *ventana, Vector2u ventana_escala, Event evento)
 		{
 			this->ventana = ventana;
+			this->evento = evento;
 			Tmenu.loadFromFile("Texturas/menu.jpg");
 			Smenu.setTexture(Tmenu);
 			Smenu.setScale(Vector2f(ventana_escala.x / Smenu.getGlobalBounds().width, ventana_escala.y / Smenu.getGlobalBounds().height));
@@ -553,6 +661,8 @@ class Menu
 
 		void loop()
 		{
+			menu_activo = true;
+
 			while (menu_activo)
 			{
 				eventos();
@@ -617,12 +727,13 @@ class Juego
 	Juego(int altura,int anchura)
 	{
 		
-		this->ventana = new RenderWindow(VideoMode(altura, anchura), "Cat's Invasion");
-		this->ventana->setFramerateLimit(60);
-		this->ventana->setPosition(Vector2i(250, 50));
+		ventana = new RenderWindow(VideoMode(altura, anchura), "Cat's Invasion");
+		ventana->setFramerateLimit(60);
+		ventana->setPosition(Vector2i(250, 50));
+		ventana->setVerticalSyncEnabled(true);
 		
 		introduccion = new Intro("Texturas/cartoon_city.jpg", ventana->getSize(),this->ventana,this->evento);
-		n1 = new Nivel("Texturas/cuarto.jpg", ventana->getSize(), this->ventana, this->evento);
+		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento);
 		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
 
 		loop();
@@ -631,18 +742,18 @@ class Juego
 	void loop()
 	{
 		
-		while (this->ventana->isOpen() && jugando)
+		while (ventana->isOpen() && jugando)
 		{
 			menu->loop();
 
-			switch (this->menu->p1->getOpc())
+			switch (menu->p1->getOpc())
 			{
 				case 1:
-					introduccion->loop();
+					//introduccion->loop();
 					n1->loop();
 					break;
 				case 2:
-					this->ventana->close();
+					ventana->close();
 					jugando = false;
 					break;
 				default:
