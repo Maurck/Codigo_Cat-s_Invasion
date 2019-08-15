@@ -1,0 +1,4 @@
+Caracteristicas a implementar:
+-Arreglar la barra de vida
+-Barra de laser
+-

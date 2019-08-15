@@ -18,5 +18,13 @@
     <ClCompile Include="..\..\Cat%27s_Invasion\Cat%27s_Invasion\main.cpp">
       <Filter>Archivos de origen</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Cat%27s_Invasion\Cat%27s_Invasion\Collision.cpp">
+      <Filter>Archivos de origen</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Cat%27s_Invasion\Cat%27s_Invasion\Collision.hpp">
+      <Filter>Archivos de origen</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

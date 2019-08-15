@@ -135,7 +135,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Cat%27s_Invasion\Cat%27s_Invasion\Collision.cpp" />
     <ClCompile Include="..\..\Cat%27s_Invasion\Cat%27s_Invasion\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Cat%27s_Invasion\Cat%27s_Invasion\Collision.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
