@@ -1,4 +1,17 @@
 Caracteristicas a implementar:
--Arreglar la barra de vida
+
+-Arreglar la barra de vida IMPLEMENTADO
+
+Nivel 1:
+
 -Barra de laser
--
+   -Animacion para modo laser
+   -Proyectil laser
+   -Enemigos desaparecen al impactar con proyectil
+      -Puntuacion
+
+-Consumibles
+
+Escena 1:
+
+-Carro pasando

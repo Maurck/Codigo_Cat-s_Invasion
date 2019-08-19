@@ -32,8 +32,8 @@ public:
 
 		imagenActual.x = 0;
 
-		uvRect.width = textura->getSize().x / float(numImagenes.x);
-		uvRect.height = textura->getSize().y / float(numImagenes.y);
+		uvRect.width = int(textura->getSize().x / numImagenes.x);
+		uvRect.height = int(textura->getSize().y / numImagenes.y);
 	}
 
 	void update(int fila, float deltaTime,bool faceRight)
@@ -227,39 +227,43 @@ class Personaje {
 	
 private:
 
-	float velocidad=100;
+	float velocidad;
+	float tiempoAnim;
 	float deltaTime = 0.0f;
 	bool miraDerecha = true;
 	Texture Tniño;
 	RectangleShape niño;
 	Animacion* animacionNiño;
-	float velocidadAnim = 0.15f;
 	RenderWindow* ventana;
 
 public:
 
-	Personaje(Vector2f initPos,RenderWindow* ventana)
+	Personaje(Vector2f initPos, RenderWindow* ventana, string rutaTextura, Vector2f tamaño, float velocidad)
 	{
 		this->ventana = ventana;
-		Tniño.loadFromFile("Texturas/niñoAnim.png");
-		niño.setSize(Vector2f(100.f, 150.f));
+		this->velocidad = 100.f;
+		tiempoAnim = 100 / velocidad * 0.2f;
+		Tniño.loadFromFile(rutaTextura);
+		niño.setSize(tamaño);
 		niño.setTexture(&Tniño);
 
-		animacionNiño = new Animacion(&Tniño, Vector2u(8, 1), velocidadAnim);
+		animacionNiño = new Animacion(&Tniño, Vector2u(8, 1), tiempoAnim);
 
 		niño.setTextureRect(animacionNiño->uvRect);
-		niño.setPosition(Vector2f(0.0f,ventana->getSize().y - niño.getSize().y * 2.1));
+		niño.setPosition(Vector2f(0.0f,ventana->getSize().y - niño.getSize().y * 2.1f));
 	}
-
+	 
 	void update(RenderWindow* ventana,float deltaTime)
 	{
 		Vector2f movimiento(0.0f, 0.0f);
 
 		if (Keyboard::isKeyPressed(Keyboard::Left))
-			movimiento.x -= velocidad * deltaTime;
+			if(niño.getPosition().x > -10.f)
+				movimiento.x -= velocidad * deltaTime;
 
 		if (Keyboard::isKeyPressed(Keyboard::Right))
-			movimiento.x += velocidad * deltaTime;
+			if(niño.getPosition().x < ventana->getSize().x)
+				movimiento.x += velocidad * deltaTime;
 
 		if (movimiento.x > 0)
 			miraDerecha = true;
@@ -368,7 +372,7 @@ public:
 
 		if (spawnTimer > spawnDelay)
 		{
-			enemigo.setPosition(Vector2f(ventana->getSize().x,100 + rand()%int(ventana->getSize().y - enemigo.getSize().height - 200)));
+			enemigo.setPosition(Vector2f(float(ventana->getSize().x),100.f + rand()%int(ventana->getSize().y - enemigo.getSize().height - 200.f)));
 			enemigos.push_back(Enemigo(enemigo));
 			spawnTimer = 0;
 		}
@@ -398,7 +402,7 @@ private:
 
 public:
 
-	UIbar(RenderWindow* ventana, Vector2f initPos, Vector2f dimension, int numRectangulos,Color colorRelleno,Color colorEsquinas,int tamañoEsquinas,string mensaje,string fuente)
+	UIbar(RenderWindow* ventana, Vector2f initPos, Vector2f dimension, int numRectangulos,Color colorRelleno,Color colorEsquinas,float tamañoEsquinas,string mensaje,string fuente)
 		: texto(ventana,fuente,mensaje,Color::Black,20)
 	{
 		this->ventana = ventana;
@@ -450,7 +454,7 @@ public:
 
 	void render()
 	{
-		for (int i = 0; i < barra.size(); i++)
+		for (int i = 0; i < signed(barra.size()); i++)
 		{
 			ventana->draw(barra[i]);
 		}
@@ -475,6 +479,10 @@ private:
 	Texture Tperro;
 	float multiplicador = 60.f;
 
+	Texture TanimPerro;
+	RectangleShape perro;
+	Animacion* animacionPerro;
+
 public:
 	Sprite Sperro;
 	int vida = 5;
@@ -488,6 +496,15 @@ public:
 		Sperro.setTexture(Tperro);
 		Sperro.setPosition(initPos);
 		Sperro.setScale(Vector2f(0.1f, 0.1f));
+
+		TanimPerro.loadFromFile("Texturas/laserAnim.png");
+		perro.setSize(Vector2f(80.f, 150.f));
+		perro.setTexture(&TanimPerro);
+
+		animacionPerro = new Animacion(&TanimPerro, Vector2u(8, 1), 0.15f);
+
+		perro.setTextureRect(animacionPerro->uvRect);
+		perro.setPosition(Vector2f(0.0f, ventana->getSize().y - perro.getSize().y * 2.1f));
 	}
 
 	void update(RenderWindow* ventana, Spawner& spawn, UIbar* vidas, float deltaTime)
@@ -536,11 +553,126 @@ public:
 			}
 		}
 
+		animacionPerro->update(0, deltaTime,true);
+		perro.setTextureRect(animacionPerro->uvRect);
+
 	}
 
 	void render(RenderWindow* ventana)
 	{
 		ventana->draw(Sperro);
+		ventana->draw(perro);
+	}
+
+};
+
+class Bala {
+
+private:
+	Texture Tbala;
+	RenderWindow* ventana;
+public:
+	Sprite Sbala;
+	Bala(RenderWindow* ventana, string textura, Vector2f escala)
+	{
+		this->ventana = ventana;
+		Tbala.loadFromFile(textura);
+		Sbala.setTexture(Tbala);
+		Sbala.setScale(escala);
+	}
+
+	void render()
+	{
+		ventana->draw(Sbala);
+	}
+
+	void setPosition(Vector2f pos)
+	{
+		Sbala.setPosition(pos);
+	}
+
+	void move(Vector2f mov)
+	{
+		Sbala.move(mov);
+	}
+
+	Vector2f getPosition()
+	{
+		return Sbala.getPosition();
+	}
+
+	FloatRect getSize()
+	{
+		return Sbala.getGlobalBounds();
+	}
+
+};
+
+class SpawnerBala {
+private:
+
+	Bala bala;
+	RenderWindow* ventana;
+	int spawnTimer, spawnDelay;
+	float velocidad;
+	float multiplicador = 60.f;
+	Jugador* jugador;
+public:
+	vector<Bala> balas;
+
+	SpawnerBala(RenderWindow* ventana,Jugador* jugador, string textura, Vector2f escala, int spawnDelay, float velocidad) : bala(ventana, textura, escala)
+	{
+		this->velocidad = velocidad;
+		this->spawnDelay = spawnDelay;
+		this->ventana = ventana;
+		this->jugador = jugador;
+		spawnTimer = this->spawnDelay;
+	}
+
+	void update(float deltaTime, Spawner& spawn)
+	{
+		for (size_t i = 0; i < balas.size(); i++)
+		{
+			balas[i].move(Vector2f(velocidad * deltaTime * multiplicador, 0.0f));
+
+			if (balas[i].getPosition().x > ventana->getSize().x)
+			{
+				balas.erase(balas.begin() + i);
+			}
+		}
+
+		if (spawnTimer <= spawnDelay)
+			spawnTimer++;
+
+		if (Keyboard::isKeyPressed(Keyboard::Space) && spawnTimer > spawnDelay)
+		{
+			bala.setPosition(Vector2f(jugador->Sperro.getPosition().x + jugador->Sperro.getGlobalBounds().width / 1.5f,jugador->Sperro.getPosition().y + (jugador->Sperro.getGlobalBounds().height / 3.f)));
+			balas.push_back(Bala(bala));
+			spawnTimer = 0;
+		}
+
+		for (int i = 0; i < spawn.enemigos.size(); i++)
+		{
+			for (int j = 0; j < balas.size(); j++)
+			{
+				if (Collision::PixelPerfectTest(balas[j].Sbala, spawn.enemigos[i].Senemigo))
+				{
+					spawn.enemigos.erase(spawn.enemigos.begin() + i);
+					balas.erase(balas.begin() + j);
+					break;
+
+				}
+			}
+		}
+
+	}
+
+	void render()
+	{
+		for (size_t i = 0; i < balas.size(); i++)
+		{
+			balas[i].render();
+		}
 	}
 
 };
@@ -556,18 +688,20 @@ public:
 	float deltaTime = 0.0f;
 	Spawner gatos;
 	Jugador* perro;
+	SpawnerBala* balas;
 	UIbar* barraVida;
 	Music musica;
 
 	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento) 
-		: gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10)
+		: gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10000)		
 	{
 		this->ventana = ventana;
 		this->evento = evento;
 
 		perro = new Jugador(Vector2f(40.f, 80.f), ventana);
+		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 30, 10);
 		barraVida = new UIbar(ventana,Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), perro->vida,"Texturas/heart2.png","Vidas:","Fuentes/fuente_cartoon.ttf");
-
+		
 		Tfondo.loadFromFile(ruta_fondo);
 		Sfondo.setTexture(Tfondo);
 		Sfondo.setScale(Vector2f(ventana_escala.x/Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
@@ -599,7 +733,7 @@ public:
 	void update()
 	{
 		perro->update(ventana,gatos,barraVida,deltaTime);
-
+		balas->update(deltaTime,gatos);
 		gatos.update(deltaTime);
 	}
 
@@ -628,12 +762,13 @@ public:
 		ventana->draw(Sfondo);
 		perro->render(ventana);
 		gatos.render();
+		balas->render();
 		barraVida->render();
 		ventana->display();
 	}
 };
 
-class Intro
+class Escena
 {
 public:
 	Texture Tfondo;
@@ -650,9 +785,9 @@ public:
 
 	Personaje niño;
 
-	Intro(string ruta_fondo, Vector2u ventana_escala, RenderWindow* ventana, Event evento) :
-		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de billy, \nun niño que solo queria ser feliz",Color::Black, 80) 
-		, niño(Vector2f(40.f, 80.f), ventana)
+	Escena(string ruta_fondo, Vector2u ventana_escala, RenderWindow* ventana, Event evento) :
+		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de billy, \nun niño que solo quería ser feliz.",Color::Black, 80) 
+		, niño(Vector2f(40.f, 80.f), ventana, "Texturas/niñoAnim.png",Vector2f(100.f, 150.f),100.f)
 	{
 		this->ventana = ventana;
 		this->evento = evento;
@@ -747,12 +882,12 @@ class Menu
 			TdogeMenu.loadFromFile("Texturas/dogeMenu.png");
 			SdogeMenu.setTexture(TdogeMenu);
 			SdogeMenu.setScale(0.2f, 0.2f);			
-			SdogeMenu.setPosition(cats_invasion->getPos_x() + cats_invasion->getSize_x()*1.01, cats_invasion->getPos_y() + this->cats_invasion->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5);
+			SdogeMenu.setPosition(cats_invasion->getPos_x() + cats_invasion->getSize_x() * 1.01f, cats_invasion->getPos_y() + this->cats_invasion->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5f);
 
 			TcatMenu.loadFromFile("Texturas/catMenu.png");
 			ScatMenu.setTexture(TcatMenu);
 			ScatMenu.setScale(SdogeMenu.getGlobalBounds().width / ScatMenu.getGlobalBounds().width, SdogeMenu.getGlobalBounds().height / ScatMenu.getGlobalBounds().height);
-			ScatMenu.setPosition(cats_invasion->getPos_x() - ScatMenu.getGlobalBounds().width*1.1, cats_invasion->getPos_y() + this->cats_invasion->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5);
+			ScatMenu.setPosition(cats_invasion->getPos_x() - ScatMenu.getGlobalBounds().width * 1.1f, cats_invasion->getPos_y() + this->cats_invasion->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5f);
 
 			jugar = new Texto(this->ventana, "Fuentes/fuente_elegante.ttf", "Jugar", Color::Black, 80);
 			jugar->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->cats_invasion->getPos_y() + this->cats_invasion->getSize_y() + 50);
@@ -760,7 +895,7 @@ class Menu
 			salir = new Texto(this->ventana, "Fuentes/fuente_elegante.ttf", "Salir", Color::Black, 80);
 			salir->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->ventana->getSize().y / 6.f + 200.f);
 
-			p1 = new Puntero("Texturas/apuntador.png",ventana, (salir->getPos_y() + (salir->getSize_y() / 2) - (jugar->getPos_y() + jugar->getSize_y() / 2)), Vector2f(0.3, 0.3), 20);
+			p1 = new Puntero("Texturas/apuntador.png",ventana, (salir->getPos_y() + (salir->getSize_y() / 2.0f) - (jugar->getPos_y() + jugar->getSize_y() / 2.0f)), Vector2f(0.3f, 0.3f), 20);
 			p1->setPos(jugar->getPos_x() - p1->getSize_x(), jugar->getPos_y() + jugar->getSize_y() - p1->getSize_y() / 2);
 			p1->setInitPos(jugar->getPos_x() - p1->getSize_x(), jugar->getPos_y() + jugar->getSize_y() - p1->getSize_y() / 2);
 		}
@@ -824,7 +959,7 @@ class Juego
 	int altura, anchura;
 	RenderWindow *ventana;
 	Event evento;
-	Intro *introduccion;
+	Escena *introduccion;
 	Nivel* n1;
 	Menu *menu;
 	bool jugando = true;
@@ -839,7 +974,7 @@ class Juego
 		ventana->setPosition(Vector2i(250, 50));
 		ventana->setVerticalSyncEnabled(true);
 		
-		introduccion = new Intro("Texturas/cartoon_city.jpg", ventana->getSize(),this->ventana,this->evento);
+		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),this->ventana,this->evento);
 		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento);
 		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
 
