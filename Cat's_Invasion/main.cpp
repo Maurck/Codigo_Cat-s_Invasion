@@ -21,6 +21,7 @@ private:
 	float tiempoTotal;
 	float tiempoCambio;
 
+
 public:
 	IntRect uvRect;
 
@@ -38,31 +39,36 @@ public:
 
 	void update(int fila, float deltaTime,bool faceRight)
 	{
-		imagenActual.y = fila;
-		tiempoTotal += deltaTime;
 
-		if (tiempoTotal >= tiempoCambio)
+		if (imagenActual.x < numImagenes.x - 1)
 		{
-			tiempoTotal -= tiempoCambio;
-			imagenActual.x++;
-		}
+			imagenActual.y = fila;
+			tiempoTotal += deltaTime;
 
-		if (imagenActual.x >= numImagenes.x)
-			imagenActual.x = 0;
+			if (tiempoTotal >= tiempoCambio)
+			{
+				tiempoTotal -= tiempoCambio;
+				imagenActual.x++;
+			}
 
-		uvRect.top = imagenActual.y * uvRect.height;
-		
-		if (faceRight)
-		{
-			uvRect.left = imagenActual.x * uvRect.width;
-			uvRect.width = abs(uvRect.width);
-		}
-		else
-		{
-			uvRect.left = (imagenActual.x + 1) * abs(uvRect.width);
-			uvRect.width = -abs(uvRect.width);
-		}
+			uvRect.top = imagenActual.y * uvRect.height;
 
+			if (faceRight)
+			{
+				uvRect.left = imagenActual.x * uvRect.width;
+				uvRect.width = abs(uvRect.width);
+			}
+			else
+			{
+				uvRect.left = (imagenActual.x + 1) * abs(uvRect.width);
+				uvRect.width = -abs(uvRect.width);
+			}
+		}
+	}
+
+	void resetAnim()
+	{
+		imagenActual.x = 0;
 	}
 };
 
@@ -478,6 +484,7 @@ private:
 	bool miraDerecha = true;
 	Texture Tperro;
 	float multiplicador = 60.f;
+	bool modoLaser = false;
 
 	Texture TanimPerro;
 	RectangleShape perro;
@@ -499,6 +506,7 @@ public:
 
 		TanimPerro.loadFromFile("Texturas/laserAnim.png");
 		perro.setSize(Vector2f(80.f, 150.f));
+		perro.setScale(Vector2f(Sperro.getGlobalBounds().width / perro.getSize().x, 0.85f));
 		perro.setTexture(&TanimPerro);
 
 		animacionPerro = new Animacion(&TanimPerro, Vector2u(8, 1), 0.15f);
@@ -511,56 +519,98 @@ public:
 	{
 		multiplicador = 60.f;
 
-		if (Keyboard::isKeyPressed(Keyboard::Left))
+		if (Keyboard::isKeyPressed(Keyboard::L))
 		{
-			if (Sperro.getPosition().x > 0)
-			{
-				Sperro.move(-velocidad * deltaTime * multiplicador, 0.0f);
-			}
+			if(!modoLaser)
+				perro.setPosition(Vector2f(Sperro.getPosition().x,Sperro.getPosition().y - 25.f));
+			animacionPerro->resetAnim();
+			modoLaser = true;
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::Right))
+		if (Keyboard::isKeyPressed(Keyboard::K))
 		{
-			if (Sperro.getPosition().x < ventana->getSize().x - Sperro.getGlobalBounds().width)
-			{
-				Sperro.move(velocidad * deltaTime * multiplicador, 0.0f);
-			}
+			if(modoLaser)
+				Sperro.setPosition(Vector2f(perro.getPosition().x, perro.getPosition().y + 25.f));
+			modoLaser = false;
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::Up))
+		if (!modoLaser)
 		{
-			if (Sperro.getPosition().y > 100)
+			if (Keyboard::isKeyPressed(Keyboard::Left))
 			{
-				Sperro.move(0.f, -velocidad * deltaTime * multiplicador);
+				if (Sperro.getPosition().x > 0)
+				{
+					Sperro.move(-velocidad * deltaTime * multiplicador, 0.0f);
+				}
+			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Right))
+			{
+				if (Sperro.getPosition().x < ventana->getSize().x - Sperro.getGlobalBounds().width)
+				{
+					Sperro.move(velocidad * deltaTime * multiplicador, 0.0f);
+				}
+			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Up))
+			{
+				if (Sperro.getPosition().y > 100)
+				{
+					Sperro.move(0.f, -velocidad * deltaTime * multiplicador);
+				}
+			}
+
+			if (Keyboard::isKeyPressed(Keyboard::Down))
+			{
+				if (Sperro.getPosition().y < ventana->getSize().y - Sperro.getGlobalBounds().height - 100)
+				{
+					Sperro.move(0.f, velocidad * deltaTime * multiplicador);
+				}
+			}
+
+			for (size_t i = 0; i < spawn.enemigos.size(); i++)
+			{
+				if (Collision::PixelPerfectTest(Sperro, spawn.enemigos[i].Senemigo))
+				{
+					spawn.enemigos.erase(spawn.enemigos.begin() + i);
+					vidas->RectanguloMenos();
+					vida--;
+				}
 			}
 		}
-
-		if (Keyboard::isKeyPressed(Keyboard::Down))
+		else
 		{
-			if (Sperro.getPosition().y < ventana->getSize().y - Sperro.getGlobalBounds().height - 100)
-			{
-				Sperro.move(0.f, velocidad * deltaTime * multiplicador);
-			}
-		}
+			Vector2f movimiento(0.0f, 0.0f);
 
-		for (size_t i = 0; i < spawn.enemigos.size(); i++)
-		{
-			if (Collision::PixelPerfectTest(Sperro, spawn.enemigos[i].Senemigo))
-			{
-				spawn.enemigos.erase(spawn.enemigos.begin() + i);
-				vidas->RectanguloMenos();
-				vida--;
-			}
-		}
+			if (Keyboard::isKeyPressed(Keyboard::Left))
+				if (perro.getPosition().x > -10.f)
+					movimiento.x -= velocidad * multiplicador * deltaTime;
 
-		animacionPerro->update(0, deltaTime,true);
-		perro.setTextureRect(animacionPerro->uvRect);
+			if (Keyboard::isKeyPressed(Keyboard::Right))
+				if (perro.getPosition().x < ventana->getSize().x)
+					movimiento.x += velocidad * multiplicador * deltaTime;
+
+			if (Keyboard::isKeyPressed(Keyboard::Up))
+				if (perro.getPosition().y > -10.f)
+					movimiento.y -= velocidad * multiplicador * deltaTime;
+
+			if (Keyboard::isKeyPressed(Keyboard::Down))
+				if (perro.getPosition().y < ventana->getSize().x)
+					movimiento.y += velocidad * multiplicador * deltaTime;
+
+				animacionPerro->update(0, deltaTime, miraDerecha);
+				perro.setTextureRect(animacionPerro->uvRect);
+				perro.move(movimiento);
+			
+		}
 
 	}
 
 	void render(RenderWindow* ventana)
 	{
+		if(!modoLaser)
 		ventana->draw(Sperro);
+		else
 		ventana->draw(perro);
 	}
 
@@ -680,6 +730,7 @@ public:
 class Nivel
 {
 public:
+
 	Texture Tfondo;
 	Sprite Sfondo;
 	RenderWindow* ventana;
