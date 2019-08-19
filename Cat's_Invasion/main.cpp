@@ -17,18 +17,20 @@ class Animacion {
 private:
 	Vector2u numImagenes;
 	Vector2u imagenActual;
+	bool repetirAnim;
 
 	float tiempoTotal;
 	float tiempoCambio;
-
-
+	
 public:
 	IntRect uvRect;
+	bool ultimoCuadro = false;
 
-	Animacion(Texture* textura, Vector2u numImagenes, float tiempoCambio)
+	Animacion(Texture* textura, Vector2u numImagenes, float tiempoCambio,bool repetirAnim)
 	{
 		this->numImagenes = numImagenes;
 		this->tiempoCambio = tiempoCambio;
+		this->repetirAnim = repetirAnim;
 		tiempoTotal = 0.0f;
 
 		imagenActual.x = 0;
@@ -37,32 +39,49 @@ public:
 		uvRect.height = int(textura->getSize().y / numImagenes.y);
 	}
 
+	void siguienteAnim(int fila,float deltaTime,bool faceRight)
+	{
+		imagenActual.y = fila;
+		tiempoTotal += deltaTime;
+
+		if (tiempoTotal >= tiempoCambio)
+		{
+			tiempoTotal -= tiempoCambio;
+			imagenActual.x++;
+		}
+
+		uvRect.top = imagenActual.y * uvRect.height;
+
+		if (faceRight)
+		{
+			uvRect.left = imagenActual.x * uvRect.width;
+			uvRect.width = abs(uvRect.width);
+		}
+		else
+		{
+			uvRect.left = (imagenActual.x + 1) * abs(uvRect.width);
+			uvRect.width = -abs(uvRect.width);
+		}
+
+		if (imagenActual.x == numImagenes.x - 1)
+			ultimoCuadro = true;
+		else
+			ultimoCuadro = false;
+	}
+
 	void update(int fila, float deltaTime,bool faceRight)
 	{
-
-		if (imagenActual.x < numImagenes.x - 1)
+		if (repetirAnim)
 		{
-			imagenActual.y = fila;
-			tiempoTotal += deltaTime;
+			siguienteAnim(fila,deltaTime,faceRight);
 
-			if (tiempoTotal >= tiempoCambio)
-			{
-				tiempoTotal -= tiempoCambio;
-				imagenActual.x++;
-			}
-
-			uvRect.top = imagenActual.y * uvRect.height;
-
-			if (faceRight)
-			{
-				uvRect.left = imagenActual.x * uvRect.width;
-				uvRect.width = abs(uvRect.width);
-			}
-			else
-			{
-				uvRect.left = (imagenActual.x + 1) * abs(uvRect.width);
-				uvRect.width = -abs(uvRect.width);
-			}
+			if (imagenActual.x >= numImagenes.x)
+				imagenActual.x = 0;
+		}
+		else
+		{
+			if (imagenActual.x < numImagenes.x - 1)
+				siguienteAnim(fila, deltaTime, faceRight);
 		}
 	}
 
@@ -70,6 +89,7 @@ public:
 	{
 		imagenActual.x = 0;
 	}
+
 };
 
 
@@ -130,6 +150,11 @@ public:
 	void render()
 	{
 		this->ventana->draw(this->texto);
+	}
+
+	void setString(string mensaje)
+	{
+		texto.setString(mensaje);
 	}
 };
 
@@ -253,7 +278,7 @@ public:
 		niño.setSize(tamaño);
 		niño.setTexture(&Tniño);
 
-		animacionNiño = new Animacion(&Tniño, Vector2u(8, 1), tiempoAnim);
+		animacionNiño = new Animacion(&Tniño, Vector2u(8, 1), tiempoAnim,true);
 
 		niño.setTextureRect(animacionNiño->uvRect);
 		niño.setPosition(Vector2f(0.0f,ventana->getSize().y - niño.getSize().y * 2.1f));
@@ -484,53 +509,48 @@ private:
 	bool miraDerecha = true;
 	Texture Tperro;
 	float multiplicador = 60.f;
-	bool modoLaser = false;
-
 	Texture TanimPerro;
-	RectangleShape perro;
-	Animacion* animacionPerro;
 
 public:
 	Sprite Sperro;
+	Animacion* animacionPerro;
 	int vida = 5;
+	bool modoLaser = false;
+	Sprite perro;
 
 	Jugador(Vector2f initPos, RenderWindow* ventana)
 	{
 
-		if (!Tperro.loadFromFile("Texturas/dogeCartoon.png"))
-			cout << "No se pudo cargar la textura" << endl;
+		Collision::CreateTextureAndBitmask(Tperro, "Texturas/dogeCartoon.png");
 
 		Sperro.setTexture(Tperro);
 		Sperro.setPosition(initPos);
 		Sperro.setScale(Vector2f(0.1f, 0.1f));
 
-		TanimPerro.loadFromFile("Texturas/laserAnim.png");
-		perro.setSize(Vector2f(80.f, 150.f));
-		perro.setScale(Vector2f(Sperro.getGlobalBounds().width / perro.getSize().x, 0.85f));
-		perro.setTexture(&TanimPerro);
-
-		animacionPerro = new Animacion(&TanimPerro, Vector2u(8, 1), 0.15f);
+		Collision::CreateTextureAndBitmask(TanimPerro, "Texturas/laserAnim.png");
+		perro.setTexture(TanimPerro);
+		perro.setScale(Vector2f(0.1f, 0.1f));
+		
+		animacionPerro = new Animacion(&TanimPerro, Vector2u(8, 1), 0.15f,false);
 
 		perro.setTextureRect(animacionPerro->uvRect);
-		perro.setPosition(Vector2f(0.0f, ventana->getSize().y - perro.getSize().y * 2.1f));
+		perro.setPosition(Vector2f(0.0f, ventana->getSize().y - perro.getGlobalBounds().height * 2.1f));
 	}
 
 	void update(RenderWindow* ventana, Spawner& spawn, UIbar* vidas, float deltaTime)
 	{
 		multiplicador = 60.f;
 
-		if (Keyboard::isKeyPressed(Keyboard::L))
+		if (Keyboard::isKeyPressed(Keyboard::L) && !modoLaser)
 		{
-			if(!modoLaser)
-				perro.setPosition(Vector2f(Sperro.getPosition().x,Sperro.getPosition().y - 25.f));
+			perro.setPosition(Vector2f(Sperro.getPosition().x,Sperro.getPosition().y - 25.f));
 			animacionPerro->resetAnim();
 			modoLaser = true;
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::K))
+		if (Keyboard::isKeyPressed(Keyboard::K) && modoLaser)
 		{
-			if(modoLaser)
-				Sperro.setPosition(Vector2f(perro.getPosition().x, perro.getPosition().y + 25.f));
+			Sperro.setPosition(Vector2f(perro.getPosition().x, perro.getPosition().y + 25.f));
 			modoLaser = false;
 		}
 
@@ -583,25 +603,34 @@ public:
 			Vector2f movimiento(0.0f, 0.0f);
 
 			if (Keyboard::isKeyPressed(Keyboard::Left))
-				if (perro.getPosition().x > -10.f)
+				if (perro.getPosition().x > 0)
 					movimiento.x -= velocidad * multiplicador * deltaTime;
 
 			if (Keyboard::isKeyPressed(Keyboard::Right))
-				if (perro.getPosition().x < ventana->getSize().x)
+				if (perro.getPosition().x < ventana->getSize().x - perro.getGlobalBounds().width)
 					movimiento.x += velocidad * multiplicador * deltaTime;
 
 			if (Keyboard::isKeyPressed(Keyboard::Up))
-				if (perro.getPosition().y > -10.f)
+				if (perro.getPosition().y > 80.f)
 					movimiento.y -= velocidad * multiplicador * deltaTime;
 
 			if (Keyboard::isKeyPressed(Keyboard::Down))
-				if (perro.getPosition().y < ventana->getSize().x)
+				if (perro.getPosition().y < ventana->getSize().y - perro.getGlobalBounds().height - 100.f)
 					movimiento.y += velocidad * multiplicador * deltaTime;
 
 				animacionPerro->update(0, deltaTime, miraDerecha);
 				perro.setTextureRect(animacionPerro->uvRect);
 				perro.move(movimiento);
-			
+
+			for (size_t i = 0; i < spawn.enemigos.size(); i++)
+			{
+				if (Collision::PixelPerfectTest(perro,spawn.enemigos[i].Senemigo))
+				{
+					spawn.enemigos.erase(spawn.enemigos.begin() + i);
+					vidas->RectanguloMenos();
+					vida--;
+				}
+			}		
 		}
 
 	}
@@ -669,6 +698,7 @@ private:
 	Jugador* jugador;
 public:
 	vector<Bala> balas;
+	int puntuacion = 0;
 
 	SpawnerBala(RenderWindow* ventana,Jugador* jugador, string textura, Vector2f escala, int spawnDelay, float velocidad) : bala(ventana, textura, escala)
 	{
@@ -694,9 +724,10 @@ public:
 		if (spawnTimer <= spawnDelay)
 			spawnTimer++;
 
-		if (Keyboard::isKeyPressed(Keyboard::Space) && spawnTimer > spawnDelay)
+		if (Keyboard::isKeyPressed(Keyboard::Space) && spawnTimer > spawnDelay && jugador->animacionPerro->ultimoCuadro && jugador->modoLaser)
 		{
-			bala.setPosition(Vector2f(jugador->Sperro.getPosition().x + jugador->Sperro.getGlobalBounds().width / 1.5f,jugador->Sperro.getPosition().y + (jugador->Sperro.getGlobalBounds().height / 3.f)));
+			bala.setPosition(Vector2f(jugador->perro.getPosition().x + jugador->perro.getGlobalBounds().width / 1.5f, jugador->perro.getPosition().y + (jugador->perro.getGlobalBounds().height / 2.f)));
+			
 			balas.push_back(Bala(bala));
 			spawnTimer = 0;
 		}
@@ -709,6 +740,7 @@ public:
 				{
 					spawn.enemigos.erase(spawn.enemigos.begin() + i);
 					balas.erase(balas.begin() + j);
+					puntuacion += 100;
 					break;
 
 				}
@@ -742,14 +774,25 @@ public:
 	SpawnerBala* balas;
 	UIbar* barraVida;
 	Music musica;
+	int multiplo10 = 1;
 
-	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento) 
-		: gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10000)		
+	Texto puntText,puntuacionNum,nivelText;
+
+	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento,int numNivel) 
+	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10),
+		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
+		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
+		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50)
 	{
 		this->ventana = ventana;
 		this->evento = evento;
 
-		perro = new Jugador(Vector2f(40.f, 80.f), ventana);
+		puntText.setPos(30.f,0.f);
+		puntuacionNum.setPos(puntText.getPos_x() + puntText.getSize_x() / 2 - puntuacionNum.getSize_x(), puntText.getPos_y() + 40.f);
+
+		nivelText.setPos(puntText.getPos_x() + puntText.getSize_x() + 100.f, nivelText.getPos_y());
+
+		perro = new Jugador(Vector2f(40.f, ventana->getSize() .y / 2.f), ventana);
 		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 30, 10);
 		barraVida = new UIbar(ventana,Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), perro->vida,"Texturas/heart2.png","Vidas:","Fuentes/fuente_cartoon.ttf");
 		
@@ -759,7 +802,6 @@ public:
 
 		musica.openFromFile("Musica/nivelMusica.ogg");
 		musica.setLoop(true);
-
 	}
 
 	void loop()
@@ -786,6 +828,17 @@ public:
 		perro->update(ventana,gatos,barraVida,deltaTime);
 		balas->update(deltaTime,gatos);
 		gatos.update(deltaTime);
+
+		if (balas->puntuacion != 0)
+		{
+			if (balas->puntuacion % multiplo10 == 0)
+			{
+				puntuacionNum.setPos(puntuacionNum.getPos_x() - 5.f, puntuacionNum.getPos_y());
+				multiplo10 *= 10;
+			}
+		}
+
+		puntuacionNum.setString(to_string(balas->puntuacion));
 	}
 
 	void eventos()
@@ -815,6 +868,12 @@ public:
 		gatos.render();
 		balas->render();
 		barraVida->render();
+
+		puntText.render();
+		puntuacionNum.render();
+
+		nivelText.render();
+
 		ventana->display();
 	}
 };
@@ -1026,7 +1085,7 @@ class Juego
 		ventana->setVerticalSyncEnabled(true);
 		
 		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),this->ventana,this->evento);
-		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento);
+		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento,1);
 		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
 
 		loop();

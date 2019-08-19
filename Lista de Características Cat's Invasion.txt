@@ -5,13 +5,23 @@ Caracteristicas a implementar:
 Nivel 1:
 
 -Barra de laser
-   -Animacion para modo laser
-   -Proyectil laser
-   -Enemigos desaparecen al impactar con proyectil
-      -Puntuacion
+   -Animacion para modo laser IMPLENTADO
+   -Proyectil laser IMPLEMENTADO
+   -Enemigos desaparecen al impactar con proyectil IMPLEMENTADO
+      -Puntuacion IMPLEMENTADO
 
 -Consumibles
+
+-Barra de modo laser
+
+-Pantalla de pausa
+
+-Mejorar mecanicas 
 
 Escena 1:
 
 -Carro pasando
+
+Musica:
+
+Kevin Mcleod
