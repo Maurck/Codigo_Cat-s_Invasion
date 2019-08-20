@@ -479,8 +479,15 @@ public:
 
 	void RectanguloMenos()
 	{
-			barra.erase(barra.begin() + numRectangulos - 1);
-			numRectangulos--;	
+		barra.erase(barra.begin() + numRectangulos - 1);
+		numRectangulos--;	
+	}
+
+	void RectanguloMas()
+	{
+		cuadrado.setPosition(Vector2f(cuadrado.getOutlineThickness() + initPos.x + numRectangulos * (cuadrado.getSize().x + cuadrado.getOutlineThickness()), cuadrado.getOutlineThickness() + initPos.y));
+		barra.push_back(RectangleShape(cuadrado));
+		numRectangulos++;
 	}
 
 	void render()
@@ -496,6 +503,145 @@ public:
 	FloatRect pos()
 	{
 		return cuadrado.getGlobalBounds();
+	}
+
+};
+
+class Bala {
+
+private:
+	Texture Tbala;
+	RenderWindow* ventana;
+public:
+	Sprite Sbala;
+	Bala(RenderWindow* ventana, string textura, Vector2f escala)
+	{
+		this->ventana = ventana;
+		Tbala.loadFromFile(textura);
+		Sbala.setTexture(Tbala);
+		Sbala.setScale(escala);
+	}
+
+	void render()
+	{
+		ventana->draw(Sbala);
+	}
+
+	void setPosition(Vector2f pos)
+	{
+		Sbala.setPosition(pos);
+	}
+
+	void move(Vector2f mov)
+	{
+		Sbala.move(mov);
+	}
+
+	Vector2f getPosition()
+	{
+		return Sbala.getPosition();
+	}
+
+	FloatRect getSize()
+	{
+		return Sbala.getGlobalBounds();
+	}
+
+};
+
+class Mejora {
+
+private:
+	Texture Tmejora;
+	RenderWindow* ventana;
+public:
+	Sprite Smejora;
+	Mejora(RenderWindow* ventana, string textura, Vector2f escala)
+	{
+		this->ventana = ventana;
+		Tmejora.loadFromFile(textura);
+		Smejora.setTexture(Tmejora);
+		Smejora.setScale(escala);
+	}
+
+	void render()
+	{
+		ventana->draw(Smejora);
+	}
+
+	void setPosition(Vector2f pos)
+	{
+		Smejora.setPosition(pos);
+	}
+
+	void move(Vector2f mov)
+	{
+		Smejora.move(mov);
+	}
+
+	Vector2f getPosition()
+	{
+		return Smejora.getPosition();
+	}
+
+	FloatRect getSize()
+	{
+		return Smejora.getGlobalBounds();
+	}
+
+};
+
+class SpawnerMejoras {
+private:
+
+	Mejora mejora;
+	RenderWindow* ventana;
+	int spawnTimer, spawnDelay;
+	float velocidad;
+	float multiplicador = 60.f;
+public:
+	vector<Mejora> mejoras;
+
+	SpawnerMejoras(RenderWindow* ventana, string textura, Vector2f escala, int spawnDelay, float velocidad) : mejora(ventana, textura, escala)
+	{
+		this->velocidad = velocidad;
+		this->spawnDelay = spawnDelay;
+		this->ventana = ventana;
+		spawnTimer = this->spawnDelay;
+	}
+
+	void update(float deltaTime,int vidas)
+	{
+		for (size_t i = 0; i < mejoras.size(); i++)
+		{
+			mejoras[i].move(Vector2f(-velocidad * deltaTime * multiplicador, 0.0f));
+
+			if (mejoras[i].getPosition().x < -mejora.getSize().width)
+			{
+				mejoras.erase(mejoras.begin() + i);
+			}
+		}
+
+		if (vidas < 5)
+		{
+			if (spawnTimer <= spawnDelay)
+				spawnTimer++;
+
+			if (spawnTimer > spawnDelay)
+			{
+				mejora.setPosition(Vector2f(float(ventana->getSize().x), 100.f + rand() % int(ventana->getSize().y - mejora.getSize().height - 200.f)));
+				mejoras.push_back(Mejora(mejora));
+				spawnTimer = 0;
+			}
+		}
+	}
+
+	void render()
+	{
+		for (size_t i = 0; i < mejoras.size(); i++)
+		{
+			mejoras[i].render();
+		}
 	}
 
 };
@@ -530,20 +676,20 @@ public:
 		Collision::CreateTextureAndBitmask(TanimPerro, "Texturas/laserAnim.png");
 		perro.setTexture(TanimPerro);
 		perro.setScale(Vector2f(0.1f, 0.1f));
-		
-		animacionPerro = new Animacion(&TanimPerro, Vector2u(8, 1), 0.15f,false);
+
+		animacionPerro = new Animacion(&TanimPerro, Vector2u(8, 1), 0.15f, false);
 
 		perro.setTextureRect(animacionPerro->uvRect);
 		perro.setPosition(Vector2f(0.0f, ventana->getSize().y - perro.getGlobalBounds().height * 2.1f));
 	}
 
-	void update(RenderWindow* ventana, Spawner& spawn, UIbar* vidas, float deltaTime)
+	void update(RenderWindow* ventana, Spawner& spawn, SpawnerMejoras& spawnMejoras, UIbar* vidas, float deltaTime)
 	{
 		multiplicador = 60.f;
 
 		if (Keyboard::isKeyPressed(Keyboard::L) && !modoLaser)
 		{
-			perro.setPosition(Vector2f(Sperro.getPosition().x,Sperro.getPosition().y - 25.f));
+			perro.setPosition(Vector2f(Sperro.getPosition().x, Sperro.getPosition().y - 25.f));
 			animacionPerro->resetAnim();
 			modoLaser = true;
 		}
@@ -597,6 +743,20 @@ public:
 					vida--;
 				}
 			}
+
+			for (size_t i = 0; i < spawnMejoras.mejoras.size(); i++)
+			{
+				if (Collision::PixelPerfectTest(Sperro, spawnMejoras.mejoras[i].Smejora))
+				{
+					spawnMejoras.mejoras.erase(spawnMejoras.mejoras.begin() + i);
+
+					if (vida < 5)
+					{
+						vidas->RectanguloMas();
+						vida++;
+					}
+				}
+			}
 		}
 		else
 		{
@@ -618,71 +778,43 @@ public:
 				if (perro.getPosition().y < ventana->getSize().y - perro.getGlobalBounds().height - 100.f)
 					movimiento.y += velocidad * multiplicador * deltaTime;
 
-				animacionPerro->update(0, deltaTime, miraDerecha);
-				perro.setTextureRect(animacionPerro->uvRect);
-				perro.move(movimiento);
+			animacionPerro->update(0, deltaTime, miraDerecha);
+			perro.setTextureRect(animacionPerro->uvRect);
+			perro.move(movimiento);
 
 			for (size_t i = 0; i < spawn.enemigos.size(); i++)
 			{
-				if (Collision::PixelPerfectTest(perro,spawn.enemigos[i].Senemigo))
+				if (Collision::PixelPerfectTest(perro, spawn.enemigos[i].Senemigo))
 				{
 					spawn.enemigos.erase(spawn.enemigos.begin() + i);
 					vidas->RectanguloMenos();
 					vida--;
 				}
-			}		
+			}
+
+			for (size_t i = 0; i < spawnMejoras.mejoras.size(); i++)
+			{
+				if (Collision::PixelPerfectTest(perro, spawnMejoras.mejoras[i].Smejora))
+				{
+					spawnMejoras.mejoras.erase(spawnMejoras.mejoras.begin() + i);
+
+					if (vida < 5)
+					{
+						vidas->RectanguloMas();
+						vida++;
+					}
+				}
+			}
 		}
 
 	}
 
 	void render(RenderWindow* ventana)
 	{
-		if(!modoLaser)
-		ventana->draw(Sperro);
+		if (!modoLaser)
+			ventana->draw(Sperro);
 		else
-		ventana->draw(perro);
-	}
-
-};
-
-class Bala {
-
-private:
-	Texture Tbala;
-	RenderWindow* ventana;
-public:
-	Sprite Sbala;
-	Bala(RenderWindow* ventana, string textura, Vector2f escala)
-	{
-		this->ventana = ventana;
-		Tbala.loadFromFile(textura);
-		Sbala.setTexture(Tbala);
-		Sbala.setScale(escala);
-	}
-
-	void render()
-	{
-		ventana->draw(Sbala);
-	}
-
-	void setPosition(Vector2f pos)
-	{
-		Sbala.setPosition(pos);
-	}
-
-	void move(Vector2f mov)
-	{
-		Sbala.move(mov);
-	}
-
-	Vector2f getPosition()
-	{
-		return Sbala.getPosition();
-	}
-
-	FloatRect getSize()
-	{
-		return Sbala.getGlobalBounds();
+			ventana->draw(perro);
 	}
 
 };
@@ -700,7 +832,7 @@ public:
 	vector<Bala> balas;
 	int puntuacion = 0;
 
-	SpawnerBala(RenderWindow* ventana,Jugador* jugador, string textura, Vector2f escala, int spawnDelay, float velocidad) : bala(ventana, textura, escala)
+	SpawnerBala(RenderWindow* ventana, Jugador* jugador, string textura, Vector2f escala, int spawnDelay, float velocidad) : bala(ventana, textura, escala)
 	{
 		this->velocidad = velocidad;
 		this->spawnDelay = spawnDelay;
@@ -727,7 +859,7 @@ public:
 		if (Keyboard::isKeyPressed(Keyboard::Space) && spawnTimer > spawnDelay && jugador->animacionPerro->ultimoCuadro && jugador->modoLaser)
 		{
 			bala.setPosition(Vector2f(jugador->perro.getPosition().x + jugador->perro.getGlobalBounds().width / 1.5f, jugador->perro.getPosition().y + (jugador->perro.getGlobalBounds().height / 2.f)));
-			
+
 			balas.push_back(Bala(bala));
 			spawnTimer = 0;
 		}
@@ -772,6 +904,7 @@ public:
 	Spawner gatos;
 	Jugador* perro;
 	SpawnerBala* balas;
+	SpawnerMejoras huesos;
 	UIbar* barraVida;
 	Music musica;
 	int multiplo10 = 1;
@@ -782,7 +915,8 @@ public:
 	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10),
 		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
 		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
-		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50)
+		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50),
+		huesos(ventana, "Texturas/hueso.png", Vector2f(0.2f, 0.2f), 200, 10)
 	{
 		this->ventana = ventana;
 		this->evento = evento;
@@ -825,8 +959,9 @@ public:
 
 	void update()
 	{
-		perro->update(ventana,gatos,barraVida,deltaTime);
+		perro->update(ventana,gatos,huesos,barraVida,deltaTime);
 		balas->update(deltaTime,gatos);
+		huesos.update(deltaTime,perro->vida);
 		gatos.update(deltaTime);
 
 		if (balas->puntuacion != 0)
@@ -867,6 +1002,7 @@ public:
 		perro->render(ventana);
 		gatos.render();
 		balas->render();
+		huesos.render();
 		barraVida->render();
 
 		puntText.render();
