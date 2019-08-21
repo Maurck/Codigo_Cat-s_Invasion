@@ -16,7 +16,6 @@ using namespace sf;
 class Animacion {
 private:
 	Vector2u numImagenes;
-	Vector2u imagenActual;
 	bool repetirAnim;
 
 	float tiempoTotal;
@@ -25,6 +24,7 @@ private:
 public:
 	IntRect uvRect;
 	bool ultimoCuadro = false;
+	Vector2u imagenActual;
 
 	Animacion(Texture* textura, Vector2u numImagenes, float tiempoCambio,bool repetirAnim)
 	{
@@ -427,11 +427,11 @@ private:
 	RectangleShape cuadrado;
 	vector <RectangleShape> barra;
 	Vector2f dimension, initPos;
-	int numRectangulos;
 	Texture textura;
 	Texto texto;
 
 public:
+	int numRectangulos;
 
 	UIbar(RenderWindow* ventana, Vector2f initPos, Vector2f dimension, int numRectangulos,Color colorRelleno,Color colorEsquinas,float tamañoEsquinas,string mensaje,string fuente)
 		: texto(ventana,fuente,mensaje,Color::Black,20)
@@ -683,22 +683,22 @@ public:
 		perro.setPosition(Vector2f(0.0f, ventana->getSize().y - perro.getGlobalBounds().height * 2.1f));
 	}
 
-	void update(RenderWindow* ventana, Spawner& spawn, SpawnerMejoras& spawnMejoras, UIbar* vidas, float deltaTime)
+	void update(RenderWindow* ventana, Spawner& spawn, SpawnerMejoras& spawnMejoras, UIbar* vidas, float deltaTime,bool laserMode)
 	{
 		multiplicador = 60.f;
 
-		if (Keyboard::isKeyPressed(Keyboard::L) && !modoLaser)
+		if (Keyboard::isKeyPressed(Keyboard::RShift) && !modoLaser && laserMode)
 		{
 			perro.setPosition(Vector2f(Sperro.getPosition().x, Sperro.getPosition().y - 25.f));
 			animacionPerro->resetAnim();
 			modoLaser = true;
 		}
 
-		if (Keyboard::isKeyPressed(Keyboard::K) && modoLaser)
+		/*if (Keyboard::isKeyPressed(Keyboard::K) && modoLaser)
 		{
 			Sperro.setPosition(Vector2f(perro.getPosition().x, perro.getPosition().y + 25.f));
 			modoLaser = false;
-		}
+		}*/
 
 		if (!modoLaser)
 		{
@@ -841,7 +841,7 @@ public:
 		spawnTimer = this->spawnDelay;
 	}
 
-	void update(float deltaTime, Spawner& spawn)
+	void update(float deltaTime, Spawner& spawn,bool modoLaser)
 	{
 		for (size_t i = 0; i < balas.size(); i++)
 		{
@@ -856,7 +856,7 @@ public:
 		if (spawnTimer <= spawnDelay)
 			spawnTimer++;
 
-		if (Keyboard::isKeyPressed(Keyboard::Space) && spawnTimer > spawnDelay && jugador->animacionPerro->ultimoCuadro && jugador->modoLaser)
+		if (Keyboard::isKeyPressed(Keyboard::RControl) && spawnTimer > spawnDelay && jugador->animacionPerro->ultimoCuadro && jugador->modoLaser  && modoLaser)
 		{
 			bala.setPosition(Vector2f(jugador->perro.getPosition().x + jugador->perro.getGlobalBounds().width / 1.5f, jugador->perro.getPosition().y + (jugador->perro.getGlobalBounds().height / 2.f)));
 
@@ -906,12 +906,15 @@ public:
 	SpawnerBala* balas;
 	SpawnerMejoras huesos;
 	UIbar* barraVida;
+	UIbar* barraCargaLaser;
 	Music musica;
 	int multiplo10 = 1;
+	int laserTimer, laserDelay;
+	bool modoLaser = false;
 
 	Texto puntText,puntuacionNum,nivelText;
 
-	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento,int numNivel) 
+	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento,int numNivel,int laserDelay) 
 	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10),
 		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
 		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
@@ -920,6 +923,9 @@ public:
 	{
 		this->ventana = ventana;
 		this->evento = evento;
+		this->laserDelay = laserDelay;
+
+		laserTimer = laserDelay;
 
 		puntText.setPos(30.f,0.f);
 		puntuacionNum.setPos(puntText.getPos_x() + puntText.getSize_x() / 2 - puntuacionNum.getSize_x(), puntText.getPos_y() + 40.f);
@@ -929,6 +935,7 @@ public:
 		perro = new Jugador(Vector2f(40.f, ventana->getSize() .y / 2.f), ventana);
 		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 30, 10);
 		barraVida = new UIbar(ventana,Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), perro->vida,"Texturas/heart2.png","Vidas:","Fuentes/fuente_cartoon.ttf");
+		barraCargaLaser = new UIbar(ventana, Vector2f(420.f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), 0, "Texturas/thunder.png", "Carga de modo laser:", "Fuentes/fuente_cartoon.ttf");
 		
 		Tfondo.loadFromFile(ruta_fondo);
 		Sfondo.setTexture(Tfondo);
@@ -959,9 +966,9 @@ public:
 
 	void update()
 	{
-		perro->update(ventana,gatos,huesos,barraVida,deltaTime);
-		balas->update(deltaTime,gatos);
-		huesos.update(deltaTime,perro->vida);
+		perro->update(ventana, gatos, huesos, barraVida, deltaTime, modoLaser);
+		balas->update(deltaTime, gatos, modoLaser);
+		huesos.update(deltaTime, perro->vida);
 		gatos.update(deltaTime);
 
 		if (balas->puntuacion != 0)
@@ -974,6 +981,32 @@ public:
 		}
 
 		puntuacionNum.setString(to_string(balas->puntuacion));
+
+		if (laserTimer <= laserDelay)
+			laserTimer++;
+
+		if (laserTimer > laserDelay && barraCargaLaser->numRectangulos < 7 && !modoLaser)
+		{
+			barraCargaLaser->RectanguloMas();
+			laserTimer = 0;
+
+			if (barraCargaLaser->numRectangulos == 7)
+				modoLaser = true;
+		}
+
+		if (perro->animacionPerro->ultimoCuadro && modoLaser && laserTimer > laserDelay)
+		{
+			barraCargaLaser->RectanguloMenos();
+			laserTimer = 0;
+
+			if (barraCargaLaser->numRectangulos == 0)
+			{
+				modoLaser = false;
+				perro->modoLaser = false;
+				perro->animacionPerro->ultimoCuadro = false;
+				perro->Sperro.setPosition(Vector2f(perro->perro.getPosition().x, perro->perro.getPosition().y + 25.f));
+			}
+		}
 	}
 
 	void eventos()
@@ -1004,6 +1037,7 @@ public:
 		balas->render();
 		huesos.render();
 		barraVida->render();
+		barraCargaLaser->render();
 
 		puntText.render();
 		puntuacionNum.render();
@@ -1221,7 +1255,7 @@ class Juego
 		ventana->setVerticalSyncEnabled(true);
 		
 		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),this->ventana,this->evento);
-		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento,1);
+		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento,1,50);
 		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
 
 		loop();

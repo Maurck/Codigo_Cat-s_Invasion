@@ -10,9 +10,9 @@ Nivel 1:
    -Enemigos desaparecen al impactar con proyectil IMPLEMENTADO
       -Puntuacion IMPLEMENTADO
 
--Consumibles
+-Consumibles IMPLEMENTADO
 
--Barra de modo laser
+-Barra de modo laser IMPLEMENTADO
 
 -Pantalla de pausa
 

@@ -1,5 +1,5 @@
 ﻿  main.cpp
 C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(867,21): warning C4018:  '<': no coinciden signed/unsigned
 C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(869,22): warning C4018:  '<': no coinciden signed/unsigned
-C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(945,13): warning C4244:  'argumento': conversión de 'time_t' a 'unsigned int'; posible pérdida de datos
+C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(952,13): warning C4244:  'argumento': conversión de 'time_t' a 'unsigned int'; posible pérdida de datos
   Cat's_Invasion.vcxproj -> C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Debug\Cat's_Invasion.exe
