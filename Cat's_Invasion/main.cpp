@@ -33,13 +33,11 @@ public:
 		this->repetirAnim = repetirAnim;
 		tiempoTotal = 0.0f;
 
-		imagenActual.x = 0;
-
 		uvRect.width = int(textura->getSize().x / numImagenes.x);
 		uvRect.height = int(textura->getSize().y / numImagenes.y);
 	}
 
-	void siguienteAnim(int fila,float deltaTime,bool faceRight)
+	void siguienteAnim(int fila,float deltaTime,bool faceRight,bool alReves)
 	{
 		imagenActual.y = fila;
 		tiempoTotal += deltaTime;
@@ -47,7 +45,11 @@ public:
 		if (tiempoTotal >= tiempoCambio)
 		{
 			tiempoTotal -= tiempoCambio;
-			imagenActual.x++;
+
+			if (alReves)
+				imagenActual.x--;
+			else
+				imagenActual.x++;
 		}
 
 		uvRect.top = imagenActual.y * uvRect.height;
@@ -69,11 +71,11 @@ public:
 			ultimoCuadro = false;
 	}
 
-	void update(int fila, float deltaTime,bool faceRight)
+	void update(int fila, float deltaTime,bool faceRight,bool alReves)
 	{
 		if (repetirAnim)
 		{
-			siguienteAnim(fila,deltaTime,faceRight);
+			siguienteAnim(fila,deltaTime,faceRight,alReves);
 
 			if (imagenActual.x >= numImagenes.x)
 				imagenActual.x = 0;
@@ -81,7 +83,7 @@ public:
 		else
 		{
 			if (imagenActual.x < numImagenes.x - 1)
-				siguienteAnim(fila, deltaTime, faceRight);
+				siguienteAnim(fila, deltaTime, faceRight,alReves);
 		}
 	}
 
@@ -303,7 +305,7 @@ public:
 
 		if(movimiento.x != 0)
 		{ 
-			animacionNiño->update(0, deltaTime, miraDerecha);
+			animacionNiño->update(0, deltaTime, miraDerecha,false);
 			niño.setTextureRect(animacionNiño->uvRect);
 			niño.move(movimiento);
 		}
@@ -610,7 +612,7 @@ public:
 		spawnTimer = this->spawnDelay;
 	}
 
-	void update(float deltaTime,int vidas)
+	void update(float deltaTime,bool canSpawn)
 	{
 		for (size_t i = 0; i < mejoras.size(); i++)
 		{
@@ -622,7 +624,7 @@ public:
 			}
 		}
 
-		if (vidas < 5)
+		if (canSpawn)
 		{
 			if (spawnTimer <= spawnDelay)
 				spawnTimer++;
@@ -634,6 +636,11 @@ public:
 				spawnTimer = 0;
 			}
 		}
+	}
+
+	void mostrarTamañoArreglo()
+	{
+		cout << mejoras.size() << endl;
 	}
 
 	void render()
@@ -683,7 +690,53 @@ public:
 		perro.setPosition(Vector2f(0.0f, ventana->getSize().y - perro.getGlobalBounds().height * 2.1f));
 	}
 
-	void update(RenderWindow* ventana, Spawner& spawn, SpawnerMejoras& spawnMejoras, UIbar* vidas, float deltaTime,bool laserMode)
+	void updateColisionesJugador(Spawner& spawn, SpawnerMejoras& spawnMejoras, SpawnerMejoras& comida, UIbar* vidas, UIbar* escudos,Sprite jugador)
+	{
+		for (size_t i = 0; i < spawn.enemigos.size(); i++)
+		{
+			if (Collision::PixelPerfectTest(jugador, spawn.enemigos[i].Senemigo))
+			{
+				spawn.enemigos.erase(spawn.enemigos.begin() + i);
+
+				if (escudos->numRectangulos <= 0)
+				{
+					vidas->RectanguloMenos();
+					vida--;
+				}
+				else
+					escudos->RectanguloMenos();
+			}
+		}
+
+		for (size_t i = 0; i < spawnMejoras.mejoras.size(); i++)
+		{
+			if (Collision::PixelPerfectTest(jugador, spawnMejoras.mejoras[i].Smejora))
+			{
+				spawnMejoras.mejoras.erase(spawnMejoras.mejoras.begin() + i);
+
+				if (vida < 5)
+				{
+					vidas->RectanguloMas();
+					vida++;
+				}
+			}
+		}
+
+		for (size_t i = 0; i < comida.mejoras.size(); i++)
+		{
+			if (Collision::PixelPerfectTest(jugador, comida.mejoras[i].Smejora))
+			{
+				comida.mejoras.erase(comida.mejoras.begin() + i);
+
+				if (escudos->numRectangulos < vidas->numRectangulos)
+				{
+					escudos->RectanguloMas();
+				}
+			}
+		}
+	}
+
+	void update(RenderWindow* ventana, Spawner& spawn, SpawnerMejoras& spawnMejoras,SpawnerMejoras& comida, UIbar* vidas,UIbar* escudos, float deltaTime,bool laserMode)
 	{
 		multiplicador = 60.f;
 
@@ -693,12 +746,6 @@ public:
 			animacionPerro->resetAnim();
 			modoLaser = true;
 		}
-
-		/*if (Keyboard::isKeyPressed(Keyboard::K) && modoLaser)
-		{
-			Sperro.setPosition(Vector2f(perro.getPosition().x, perro.getPosition().y + 25.f));
-			modoLaser = false;
-		}*/
 
 		if (!modoLaser)
 		{
@@ -734,29 +781,8 @@ public:
 				}
 			}
 
-			for (size_t i = 0; i < spawn.enemigos.size(); i++)
-			{
-				if (Collision::PixelPerfectTest(Sperro, spawn.enemigos[i].Senemigo))
-				{
-					spawn.enemigos.erase(spawn.enemigos.begin() + i);
-					vidas->RectanguloMenos();
-					vida--;
-				}
-			}
+			updateColisionesJugador(spawn, spawnMejoras, comida, vidas, escudos, Sperro);
 
-			for (size_t i = 0; i < spawnMejoras.mejoras.size(); i++)
-			{
-				if (Collision::PixelPerfectTest(Sperro, spawnMejoras.mejoras[i].Smejora))
-				{
-					spawnMejoras.mejoras.erase(spawnMejoras.mejoras.begin() + i);
-
-					if (vida < 5)
-					{
-						vidas->RectanguloMas();
-						vida++;
-					}
-				}
-			}
 		}
 		else
 		{
@@ -778,33 +804,15 @@ public:
 				if (perro.getPosition().y < ventana->getSize().y - perro.getGlobalBounds().height - 100.f)
 					movimiento.y += velocidad * multiplicador * deltaTime;
 
-			animacionPerro->update(0, deltaTime, miraDerecha);
+			if(laserMode)
+				animacionPerro->update(0, deltaTime, miraDerecha,false);
+			else
+				animacionPerro->update(0, deltaTime, miraDerecha, true);
+
 			perro.setTextureRect(animacionPerro->uvRect);
 			perro.move(movimiento);
 
-			for (size_t i = 0; i < spawn.enemigos.size(); i++)
-			{
-				if (Collision::PixelPerfectTest(perro, spawn.enemigos[i].Senemigo))
-				{
-					spawn.enemigos.erase(spawn.enemigos.begin() + i);
-					vidas->RectanguloMenos();
-					vida--;
-				}
-			}
-
-			for (size_t i = 0; i < spawnMejoras.mejoras.size(); i++)
-			{
-				if (Collision::PixelPerfectTest(perro, spawnMejoras.mejoras[i].Smejora))
-				{
-					spawnMejoras.mejoras.erase(spawnMejoras.mejoras.begin() + i);
-
-					if (vida < 5)
-					{
-						vidas->RectanguloMas();
-						vida++;
-					}
-				}
-			}
+			updateColisionesJugador(spawn,spawnMejoras,comida,vidas,escudos, perro);
 		}
 
 	}
@@ -891,6 +899,7 @@ public:
 
 };
 
+
 class Nivel
 {
 public:
@@ -905,7 +914,9 @@ public:
 	Jugador* perro;
 	SpawnerBala* balas;
 	SpawnerMejoras huesos;
+	SpawnerMejoras comida;
 	UIbar* barraVida;
+	UIbar* barraEscudo;
 	UIbar* barraCargaLaser;
 	Music musica;
 	int multiplo10 = 1;
@@ -919,7 +930,8 @@ public:
 		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
 		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
 		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50),
-		huesos(ventana, "Texturas/hueso.png", Vector2f(0.2f, 0.2f), 200, 10)
+		huesos(ventana, "Texturas/hueso.png", Vector2f(0.2f, 0.2f), 200, 10),
+		comida(ventana, "Texturas/comida.png", Vector2f(0.2f, 0.2f), 100, 10)
 	{
 		this->ventana = ventana;
 		this->evento = evento;
@@ -935,6 +947,7 @@ public:
 		perro = new Jugador(Vector2f(40.f, ventana->getSize() .y / 2.f), ventana);
 		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 30, 10);
 		barraVida = new UIbar(ventana,Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), perro->vida,"Texturas/heart2.png","Vidas:","Fuentes/fuente_cartoon.ttf");
+		barraEscudo = new UIbar(ventana, Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f),0, "Texturas/escudo.png", "", "Fuentes/fuente_cartoon.ttf");
 		barraCargaLaser = new UIbar(ventana, Vector2f(420.f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), 0, "Texturas/thunder.png", "Carga de modo laser:", "Fuentes/fuente_cartoon.ttf");
 		
 		Tfondo.loadFromFile(ruta_fondo);
@@ -964,13 +977,8 @@ public:
 		}
 	}
 
-	void update()
+	void updatePuntuacion()
 	{
-		perro->update(ventana, gatos, huesos, barraVida, deltaTime, modoLaser);
-		balas->update(deltaTime, gatos, modoLaser);
-		huesos.update(deltaTime, perro->vida);
-		gatos.update(deltaTime);
-
 		if (balas->puntuacion != 0)
 		{
 			if (balas->puntuacion % multiplo10 == 0)
@@ -981,7 +989,10 @@ public:
 		}
 
 		puntuacionNum.setString(to_string(balas->puntuacion));
+	}
 
+	void updateModoLaser()
+	{
 		if (laserTimer <= laserDelay)
 			laserTimer++;
 
@@ -1009,6 +1020,21 @@ public:
 		}
 	}
 
+	void update()
+	{
+		perro->update(ventana, gatos, huesos,comida, barraVida,barraEscudo,deltaTime, modoLaser);
+		balas->update(deltaTime, gatos, modoLaser);
+
+		huesos.update(deltaTime,barraVida->numRectangulos < 5);
+		comida.update(deltaTime,barraEscudo->numRectangulos < barraVida->numRectangulos);
+		
+		gatos.update(deltaTime);
+
+		updatePuntuacion();
+		updateModoLaser();
+		
+	}
+
 	void eventos()
 	{
 		while (ventana->pollEvent(evento))
@@ -1032,11 +1058,14 @@ public:
 		ventana->clear();
 		
 		ventana->draw(Sfondo);
+
 		perro->render(ventana);
 		gatos.render();
 		balas->render();
 		huesos.render();
+		comida.render();
 		barraVida->render();
+		barraEscudo->render();
 		barraCargaLaser->render();
 
 		puntText.render();
@@ -1066,7 +1095,7 @@ public:
 	Personaje niño;
 
 	Escena(string ruta_fondo, Vector2u ventana_escala, RenderWindow* ventana, Event evento) :
-		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de billy, \nun niño que solo quería ser feliz.",Color::Black, 80) 
+		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de Billy...",Color::Black, 80)
 		, niño(Vector2f(40.f, 80.f), ventana, "Texturas/niñoAnim.png",Vector2f(100.f, 150.f),100.f)
 	{
 		this->ventana = ventana;
