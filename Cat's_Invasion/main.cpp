@@ -740,7 +740,7 @@ public:
 	{
 		multiplicador = 60.f;
 
-		if (Keyboard::isKeyPressed(Keyboard::RShift) && !modoLaser && laserMode)
+		if (Keyboard::isKeyPressed(Keyboard::L) && !modoLaser && laserMode)
 		{
 			perro.setPosition(Vector2f(Sperro.getPosition().x, Sperro.getPosition().y - 25.f));
 			animacionPerro->resetAnim();
@@ -749,7 +749,7 @@ public:
 
 		if (!modoLaser)
 		{
-			if (Keyboard::isKeyPressed(Keyboard::Left))
+			if (Keyboard::isKeyPressed(Keyboard::A))
 			{
 				if (Sperro.getPosition().x > 0)
 				{
@@ -757,7 +757,7 @@ public:
 				}
 			}
 
-			if (Keyboard::isKeyPressed(Keyboard::Right))
+			if (Keyboard::isKeyPressed(Keyboard::D))
 			{
 				if (Sperro.getPosition().x < ventana->getSize().x - Sperro.getGlobalBounds().width)
 				{
@@ -765,7 +765,7 @@ public:
 				}
 			}
 
-			if (Keyboard::isKeyPressed(Keyboard::Up))
+			if (Keyboard::isKeyPressed(Keyboard::W))
 			{
 				if (Sperro.getPosition().y > 100)
 				{
@@ -773,7 +773,7 @@ public:
 				}
 			}
 
-			if (Keyboard::isKeyPressed(Keyboard::Down))
+			if (Keyboard::isKeyPressed(Keyboard::S))
 			{
 				if (Sperro.getPosition().y < ventana->getSize().y - Sperro.getGlobalBounds().height - 100)
 				{
@@ -788,19 +788,19 @@ public:
 		{
 			Vector2f movimiento(0.0f, 0.0f);
 
-			if (Keyboard::isKeyPressed(Keyboard::Left))
+			if (Keyboard::isKeyPressed(Keyboard::A))
 				if (perro.getPosition().x > 0)
 					movimiento.x -= velocidad * multiplicador * deltaTime;
 
-			if (Keyboard::isKeyPressed(Keyboard::Right))
+			if (Keyboard::isKeyPressed(Keyboard::D))
 				if (perro.getPosition().x < ventana->getSize().x - perro.getGlobalBounds().width)
 					movimiento.x += velocidad * multiplicador * deltaTime;
 
-			if (Keyboard::isKeyPressed(Keyboard::Up))
+			if (Keyboard::isKeyPressed(Keyboard::W))
 				if (perro.getPosition().y > 80.f)
 					movimiento.y -= velocidad * multiplicador * deltaTime;
 
-			if (Keyboard::isKeyPressed(Keyboard::Down))
+			if (Keyboard::isKeyPressed(Keyboard::S))
 				if (perro.getPosition().y < ventana->getSize().y - perro.getGlobalBounds().height - 100.f)
 					movimiento.y += velocidad * multiplicador * deltaTime;
 
@@ -864,7 +864,7 @@ public:
 		if (spawnTimer <= spawnDelay)
 			spawnTimer++;
 
-		if (Keyboard::isKeyPressed(Keyboard::RControl) && spawnTimer > spawnDelay && jugador->animacionPerro->ultimoCuadro && jugador->modoLaser  && modoLaser)
+		if (Keyboard::isKeyPressed(Keyboard::Space) && spawnTimer > spawnDelay && jugador->animacionPerro->ultimoCuadro && jugador->modoLaser  && modoLaser)
 		{
 			bala.setPosition(Vector2f(jugador->perro.getPosition().x + jugador->perro.getGlobalBounds().width / 1.5f, jugador->perro.getPosition().y + (jugador->perro.getGlobalBounds().height / 2.f)));
 
@@ -922,11 +922,14 @@ public:
 	int multiplo10 = 1;
 	int laserTimer, laserDelay;
 	bool modoLaser = false;
+	bool pausa = false;
+	int velocidadGatos = 20;
+	int spawnDelayGatos = 20;
 
 	Texto puntText,puntuacionNum,nivelText;
 
 	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento,int numNivel,int laserDelay) 
-	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),30,10),
+	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),20,20),
 		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
 		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
 		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50),
@@ -945,7 +948,7 @@ public:
 		nivelText.setPos(puntText.getPos_x() + puntText.getSize_x() + 100.f, nivelText.getPos_y());
 
 		perro = new Jugador(Vector2f(40.f, ventana->getSize() .y / 2.f), ventana);
-		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 30, 10);
+		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 10, 10);
 		barraVida = new UIbar(ventana,Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), perro->vida,"Texturas/heart2.png","Vidas:","Fuentes/fuente_cartoon.ttf");
 		barraEscudo = new UIbar(ventana, Vector2f(20.0f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f),0, "Texturas/escudo.png", "", "Fuentes/fuente_cartoon.ttf");
 		barraCargaLaser = new UIbar(ventana, Vector2f(420.f, ventana->getSize().y - 45.0f), Vector2f(50.f, 40.f), 0, "Texturas/thunder.png", "Carga de modo laser:", "Fuentes/fuente_cartoon.ttf");
@@ -968,12 +971,13 @@ public:
 		while (nivel_activo && perro->vida > 0)
 		{
 			deltaTime = reloj.restart().asSeconds();
-
-			eventos();
 			
-			update();
-
+			if (!pausa)
+				update();
+			
 			render();
+			
+			eventos();
 		}
 	}
 
@@ -1046,10 +1050,10 @@ public:
 			}
 
 			if (evento.key.code == Keyboard::P)
-				musica.play();
+				pausa = true;
 
 			if (evento.key.code == Keyboard::O)
-				musica.pause();
+				pausa = false;
 		}
 	}
 

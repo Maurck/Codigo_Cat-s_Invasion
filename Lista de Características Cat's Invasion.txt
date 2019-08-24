@@ -14,9 +14,13 @@ Nivel 1:
 
 -Barra de modo laser IMPLEMENTADO
 
--Pantalla de pausa
+-Pantalla de pausa MEDIO IMPLEMENTADO
 
 -Mejorar mecanicas 
+
+Nivel 2:
+
+-Enemigos que aumentan de tamaño
 
 Escena 1:
 
