@@ -163,25 +163,45 @@ public:
 class Puntero {
 
 	private:
-		float x, y;
+	
 		Texture Tpuntero;
 		Sprite Spuntero;
 		string textura;
+		Vector2f posInicial;
 		RenderWindow* ventana;
-		int opcion = 1, timer, delay;
+		int opcion = 1, timer, delay,numOpciones;
 		float distancia;
+		Vector2f posPunteroinit;
 
 	public:
-		Puntero(string textura,RenderWindow* ventana,float distancia,Vector2f escala,int delay)
+
+		Texto* texto[10];
+
+		Puntero(string textura,RenderWindow* ventana,Vector2f posInicial,int numOpciones,string opciones[],float distancia,Vector2f escala,int delay)
 		{
 			this->textura = textura;
 			this->ventana = ventana;
 			this->delay = delay;
 			this->distancia = distancia;
+			this->posInicial = posInicial;
+			this->numOpciones = numOpciones;
 			Tpuntero.loadFromFile(textura);
 			Spuntero.setTexture(Tpuntero);
 			Spuntero.setScale(escala);
 			timer = delay;
+
+			texto[0] = new Texto(ventana, "Fuentes/fuente_titulo.ttf", opciones[0], Color::Blue, 100);
+			texto[0]->setPos(posInicial.x, posInicial.y);
+
+			for (int i = 1; i < numOpciones; i++)
+			{
+				texto[i] = new Texto(ventana, "Fuentes/fuente_elegante.ttf", opciones[i], Color::Black, 80);
+				texto[i]->setPos(ventana->getSize().x / 2.f - texto[0]->getSize_x() / 2.f + 50.f , texto[i-1]->getPos_y() + texto[i-1]->getSize_y() + distancia);
+			}
+
+			posPunteroinit = Vector2f(texto[1]->getPos_x() - Spuntero.getGlobalBounds().width, texto[1]->getPos_y() + texto[1]->getSize_y() - Spuntero.getGlobalBounds().height / 2);
+			
+			Spuntero.setPosition(posPunteroinit);
 		}
 
 		void update()
@@ -192,14 +212,14 @@ class Puntero {
 			if (Keyboard::isKeyPressed(Keyboard::Down) && timer == delay)
 			{
 				
-				if (opcion == 2)
+				if (opcion == numOpciones - 1)
 				{
-					Spuntero.setPosition(x, y);
+					Spuntero.setPosition(posPunteroinit);
 					opcion = 1;
 				}
 				else
 				{
-					Spuntero.move(0.f, distancia);
+					Spuntero.move(0.f, texto[1]->getSize_y() +  distancia);
 					opcion++;
 				}
 				timer = 0;
@@ -210,12 +230,12 @@ class Puntero {
 
 				if (opcion == 1)
 				{
-					Spuntero.setPosition(x, y + distancia);
-					opcion = 2;
+					Spuntero.setPosition(posPunteroinit.x, posPunteroinit.y + (numOpciones - 2) * (texto[1]->getSize_y() + distancia));
+					opcion = numOpciones - 1;
 				}
 				else
 				{
-					Spuntero.move(0.f, -distancia);
+					Spuntero.move(0.f, -(texto[1]->getSize_y() + distancia));
 					opcion--;
 				}
 				timer = 0;
@@ -226,33 +246,16 @@ class Puntero {
 		void render()
 		{
 			this->ventana->draw(this->Spuntero);
-		}
 
-		float getSize_x()
-		{
-			return this->Spuntero.getGlobalBounds().width;
-		}
-
-		float getSize_y()
-		{
-			return this->Spuntero.getGlobalBounds().height;
-
-		}
-		
-		void setPos(float x, float y)
-		{
-			Spuntero.setPosition(x, y);
-		}
-
-		void setInitPos(float x, float y)
-		{
-			this->x = x;
-			this->y = y;
+			for (int i = 0; i < numOpciones; i++)
+			{
+				texto[i]->render();
+			}
 		}
 
 		int getOpc()
 		{
-			return this->opcion;
+			return opcion;
 		}
 };
 
@@ -1099,7 +1102,7 @@ public:
 	Personaje niño;
 
 	Escena(string ruta_fondo, Vector2u ventana_escala, RenderWindow* ventana, Event evento) :
-		historia(ventana, "Fuentes/fuente_elegante.ttf", "Esta es la historia de Billy...",Color::Black, 80)
+		historia(ventana, "Fuentes/fuente_elegante.ttf", "",Color::Black, 80)
 		, niño(Vector2f(40.f, 80.f), ventana, "Texturas/niñoAnim.png",Vector2f(100.f, 150.f),100.f)
 	{
 		this->ventana = ventana;
@@ -1170,7 +1173,8 @@ class Menu
 		Texture Tmenu;
 		Sprite Smenu;
 		bool menu_activo = true;
-		Texto *cats_invasion,*jugar,*salir;
+
+		string opciones[3] = { "Cat's Invasion","Jugar","Salir" };
 
 		Texture TdogeMenu;
 		Sprite SdogeMenu;
@@ -1189,28 +1193,18 @@ class Menu
 			Smenu.setScale(Vector2f(ventana_escala.x / Smenu.getGlobalBounds().width, ventana_escala.y / Smenu.getGlobalBounds().height));
 
 
-			cats_invasion = new Texto(this->ventana, "Fuentes/fuente_titulo.ttf", "Cat's Invasion", Color::Blue,100);
-			cats_invasion->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f, this->ventana->getSize().y / 6.f);
-
 			TdogeMenu.loadFromFile("Texturas/dogeMenu.png");
 			SdogeMenu.setTexture(TdogeMenu);
 			SdogeMenu.setScale(0.2f, 0.2f);			
-			SdogeMenu.setPosition(cats_invasion->getPos_x() + cats_invasion->getSize_x() * 1.01f, cats_invasion->getPos_y() + this->cats_invasion->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5f);
 
 			TcatMenu.loadFromFile("Texturas/catMenu.png");
 			ScatMenu.setTexture(TcatMenu);
 			ScatMenu.setScale(SdogeMenu.getGlobalBounds().width / ScatMenu.getGlobalBounds().width, SdogeMenu.getGlobalBounds().height / ScatMenu.getGlobalBounds().height);
-			ScatMenu.setPosition(cats_invasion->getPos_x() - ScatMenu.getGlobalBounds().width * 1.1f, cats_invasion->getPos_y() + this->cats_invasion->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5f);
 
-			jugar = new Texto(this->ventana, "Fuentes/fuente_elegante.ttf", "Jugar", Color::Black, 80);
-			jugar->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->cats_invasion->getPos_y() + this->cats_invasion->getSize_y() + 50);
+			p1 = new Puntero("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f), 3 ,opciones ,30.f, Vector2f(0.3f, 0.3f), 20);
 
-			salir = new Texto(this->ventana, "Fuentes/fuente_elegante.ttf", "Salir", Color::Black, 80);
-			salir->setPos(this->ventana->getSize().x / 2.f - cats_invasion->getSize_x() / 2.f + 50.f, this->ventana->getSize().y / 6.f + 200.f);
-
-			p1 = new Puntero("Texturas/apuntador.png",ventana, (salir->getPos_y() + (salir->getSize_y() / 2.0f) - (jugar->getPos_y() + jugar->getSize_y() / 2.0f)), Vector2f(0.3f, 0.3f), 20);
-			p1->setPos(jugar->getPos_x() - p1->getSize_x(), jugar->getPos_y() + jugar->getSize_y() - p1->getSize_y() / 2);
-			p1->setInitPos(jugar->getPos_x() - p1->getSize_x(), jugar->getPos_y() + jugar->getSize_y() - p1->getSize_y() / 2);
+			SdogeMenu.setPosition(p1->texto[0]->getPos_x() + p1->texto[0]->getSize_x() * 1.01f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5f);
+			ScatMenu.setPosition(p1->texto[0]->getPos_x() - ScatMenu.getGlobalBounds().width * 1.1f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5f);
 		}
 
 		void loop()
@@ -1253,12 +1247,9 @@ class Menu
 			ventana->clear();
 
 			ventana->draw(Smenu);
-			cats_invasion->render();
 			ventana->draw(SdogeMenu);
 			ventana->draw(ScatMenu);
 			p1->render();
-			jugar->render();
-			salir->render();
 
 			ventana->display();
 			
