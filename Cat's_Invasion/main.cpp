@@ -177,7 +177,7 @@ class Puntero {
 
 		Texto* texto[10];
 
-		Puntero(string textura,RenderWindow* ventana,Vector2f posInicial,int numOpciones,string opciones[],float distancia,Vector2f escala,int delay)
+		Puntero(string textura,RenderWindow* ventana,Vector2f posInicial,string fuenteTitulo,int tamañoTitulo,Color colorTitulo,string fuenteOpciones,int tamañoOpciones,Color colorOpciones,int numOpciones,string opciones[],float distancia,Vector2f escala,int delay)
 		{
 			this->textura = textura;
 			this->ventana = ventana;
@@ -190,12 +190,12 @@ class Puntero {
 			Spuntero.setScale(escala);
 			timer = delay;
 
-			texto[0] = new Texto(ventana, "Fuentes/fuente_titulo.ttf", opciones[0], Color::Blue, 100);
+			texto[0] = new Texto(ventana, fuenteTitulo, opciones[0], colorTitulo, tamañoTitulo);
 			texto[0]->setPos(posInicial.x, posInicial.y);
 
 			for (int i = 1; i < numOpciones; i++)
 			{
-				texto[i] = new Texto(ventana, "Fuentes/fuente_elegante.ttf", opciones[i], Color::Black, 80);
+				texto[i] = new Texto(ventana, fuenteOpciones, opciones[i], colorOpciones, tamañoOpciones);
 				texto[i]->setPos(ventana->getSize().x / 2.f - texto[0]->getSize_x() / 2.f + 50.f , texto[i-1]->getPos_y() + texto[i-1]->getSize_y() + distancia);
 			}
 
@@ -909,6 +909,8 @@ public:
 
 	Texture Tfondo;
 	Sprite Sfondo;
+	Texture TmenuPausa;
+	Sprite SmenuPausa;
 	RenderWindow* ventana;
 	Event evento;
 	bool nivel_activo = true;
@@ -918,6 +920,8 @@ public:
 	SpawnerBala* balas;
 	SpawnerMejoras huesos;
 	SpawnerMejoras comida;
+	Puntero* pMenu;
+	string opcionesPausa[3] = { "PAUSA","CONTINUAR","SALIR" };
 	UIbar* barraVida;
 	UIbar* barraEscudo;
 	UIbar* barraCargaLaser;
@@ -944,6 +948,13 @@ public:
 		this->laserDelay = laserDelay;
 
 		laserTimer = laserDelay;
+
+		TmenuPausa.loadFromFile("Texturas/menuPausa.png");
+		SmenuPausa.setTexture(TmenuPausa);
+
+		SmenuPausa.setPosition(Vector2f(ventana->getSize().x / 2 - SmenuPausa.getGlobalBounds().width / 2, ventana->getSize().y / 2 - SmenuPausa.getGlobalBounds().height / 2));
+
+		pMenu = new Puntero("Texturas/apuntador.png", ventana, Vector2f(SmenuPausa.getPosition().x + 50.f, SmenuPausa.getPosition().y + 30.f),"Fuentes/fuente_bonita.ttf",80,Color::Magenta,"Fuentes/fuente_bonita.ttf ",40,Color::Black, 3,opcionesPausa, 40.f, Vector2f(0.3f, 0.3f), 20);
 
 		puntText.setPos(30.f,0.f);
 		puntuacionNum.setPos(puntText.getPos_x() + puntText.getSize_x() / 2 - puntuacionNum.getSize_x(), puntText.getPos_y() + 40.f);
@@ -976,7 +987,21 @@ public:
 			deltaTime = reloj.restart().asSeconds();
 			
 			if (!pausa)
+			
 				update();
+			else
+			{
+				pMenu->update();
+
+				if (Keyboard::isKeyPressed(Keyboard::Enter))
+				{
+					switch (pMenu->getOpc())
+					{
+					case 1: pausa = false; break;
+					case 2: pausa = false; nivel_activo = false; break;
+					}
+				}
+			}
 			
 			render();
 			
@@ -1079,6 +1104,13 @@ public:
 		puntuacionNum.render();
 
 		nivelText.render();
+
+		if (pausa)
+		{
+			ventana->draw(SmenuPausa);
+			pMenu->render();
+		}
+			
 
 		ventana->display();
 	}
@@ -1201,7 +1233,7 @@ class Menu
 			ScatMenu.setTexture(TcatMenu);
 			ScatMenu.setScale(SdogeMenu.getGlobalBounds().width / ScatMenu.getGlobalBounds().width, SdogeMenu.getGlobalBounds().height / ScatMenu.getGlobalBounds().height);
 
-			p1 = new Puntero("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f), 3 ,opciones ,30.f, Vector2f(0.3f, 0.3f), 20);
+			p1 = new Puntero("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f),"Fuentes/fuente_titulo.ttf",100,Color::Blue,"Fuentes/fuente_bonita.ttf",80,Color::Black,3,opciones ,30.f, Vector2f(0.3f, 0.3f), 20);
 
 			SdogeMenu.setPosition(p1->texto[0]->getPos_x() + p1->texto[0]->getSize_x() * 1.01f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5f);
 			ScatMenu.setPosition(p1->texto[0]->getPos_x() - ScatMenu.getGlobalBounds().width * 1.1f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5f);
