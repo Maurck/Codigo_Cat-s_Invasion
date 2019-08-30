@@ -9,6 +9,7 @@
 #include "Collision.hpp"
 #include "conio.h"
 #include "cstdlib"
+#include "fstream"
 
 using namespace std;
 using namespace sf;
@@ -160,7 +161,7 @@ public:
 	}
 };
 
-class Puntero {
+class UImenu {
 
 	private:
 	
@@ -177,7 +178,7 @@ class Puntero {
 
 		Texto* texto[10];
 
-		Puntero(string textura,RenderWindow* ventana,Vector2f posInicial,string fuenteTitulo,int tamañoTitulo,Color colorTitulo,string fuenteOpciones,int tamañoOpciones,Color colorOpciones,int numOpciones,string opciones[],float distancia,Vector2f escala,int delay)
+		UImenu(string textura,RenderWindow* ventana,Vector2f posInicial,Vector2f offset, string fuenteTitulo,int tamañoTitulo,Color colorTitulo,string fuenteOpciones,int tamañoOpciones,Color colorOpciones,int numOpciones,string opciones[],float distancia,Vector2f escala,int delay)
 		{
 			this->textura = textura;
 			this->ventana = ventana;
@@ -193,10 +194,13 @@ class Puntero {
 			texto[0] = new Texto(ventana, fuenteTitulo, opciones[0], colorTitulo, tamañoTitulo);
 			texto[0]->setPos(posInicial.x, posInicial.y);
 
-			for (int i = 1; i < numOpciones; i++)
+			texto[1] = new Texto(ventana, fuenteOpciones, opciones[1], colorOpciones, tamañoOpciones);
+			texto[1]->setPos(offset.x, texto[0]->getPos_y() + texto[0]->getSize_y() + offset.y);
+
+			for (int i = 2; i < numOpciones; i++)
 			{
 				texto[i] = new Texto(ventana, fuenteOpciones, opciones[i], colorOpciones, tamañoOpciones);
-				texto[i]->setPos(ventana->getSize().x / 2.f - texto[0]->getSize_x() / 2.f + 50.f , texto[i-1]->getPos_y() + texto[i-1]->getSize_y() + distancia);
+				texto[i]->setPos(offset.x , texto[i-1]->getPos_y() + texto[i-1]->getSize_y() + distancia);
 			}
 
 			posPunteroinit = Vector2f(texto[1]->getPos_x() - Spuntero.getGlobalBounds().width, texto[1]->getPos_y() + texto[1]->getSize_y() - Spuntero.getGlobalBounds().height / 2);
@@ -920,7 +924,7 @@ public:
 	SpawnerBala* balas;
 	SpawnerMejoras huesos;
 	SpawnerMejoras comida;
-	Puntero* pMenu;
+	UImenu* pMenu;
 	string opcionesPausa[3] = { "PAUSA","CONTINUAR","SALIR" };
 	UIbar* barraVida;
 	UIbar* barraEscudo;
@@ -951,10 +955,12 @@ public:
 
 		TmenuPausa.loadFromFile("Texturas/menuPausa.png");
 		SmenuPausa.setTexture(TmenuPausa);
+		SmenuPausa.setScale(Vector2f(0.6f, 1.f));
+		SmenuPausa.setColor(Color(255,255,255,180));
 
 		SmenuPausa.setPosition(Vector2f(ventana->getSize().x / 2 - SmenuPausa.getGlobalBounds().width / 2, ventana->getSize().y / 2 - SmenuPausa.getGlobalBounds().height / 2));
 
-		pMenu = new Puntero("Texturas/apuntador.png", ventana, Vector2f(SmenuPausa.getPosition().x + 50.f, SmenuPausa.getPosition().y + 30.f),"Fuentes/fuente_bonita.ttf",80,Color::Magenta,"Fuentes/fuente_bonita.ttf ",40,Color::Black, 3,opcionesPausa, 40.f, Vector2f(0.3f, 0.3f), 20);
+		pMenu = new UImenu("Texturas/apuntador.png", ventana, Vector2f(SmenuPausa.getPosition().x + 50.f, SmenuPausa.getPosition().y + 30.f),Vector2f(300.f,100.f),"Fuentes/fuente_bonita.ttf",45,Color::Magenta,"Fuentes/fuente_bonita.ttf ",30,Color::Black, 3,opcionesPausa, 40.f, Vector2f(0.3f, 0.3f), 20);
 
 		puntText.setPos(30.f,0.f);
 		puntuacionNum.setPos(puntText.getPos_x() + puntText.getSize_x() / 2 - puntuacionNum.getSize_x(), puntText.getPos_y() + 40.f);
@@ -1214,7 +1220,7 @@ class Menu
 		Sprite ScatMenu;
 
 	public:
-		Puntero* p1;
+		UImenu* p1;
 
 		Menu(RenderWindow *ventana, Vector2u ventana_escala, Event evento)
 		{
@@ -1233,7 +1239,7 @@ class Menu
 			ScatMenu.setTexture(TcatMenu);
 			ScatMenu.setScale(SdogeMenu.getGlobalBounds().width / ScatMenu.getGlobalBounds().width, SdogeMenu.getGlobalBounds().height / ScatMenu.getGlobalBounds().height);
 
-			p1 = new Puntero("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f),"Fuentes/fuente_titulo.ttf",100,Color::Blue,"Fuentes/fuente_bonita.ttf",80,Color::Black,3,opciones ,30.f, Vector2f(0.3f, 0.3f), 20);
+			p1 = new UImenu("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f),Vector2f(250.f,60.f),"Fuentes/fuente_titulo.ttf",100,Color::Blue,"Fuentes/fuente_bonita.ttf",80,Color::Black,3,opciones ,30.f, Vector2f(0.4f, 0.4f), 20);
 
 			SdogeMenu.setPosition(p1->texto[0]->getPos_x() + p1->texto[0]->getSize_x() * 1.01f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5f);
 			ScatMenu.setPosition(p1->texto[0]->getPos_x() - ScatMenu.getGlobalBounds().width * 1.1f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5f);
@@ -1337,6 +1343,9 @@ class Juego
 				default:
 					break;
 			}
+
+			delete n1;
+			n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento, 1, 50);
 		}
 	}
 };
