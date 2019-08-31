@@ -674,6 +674,8 @@ private:
 public:
 	Sprite Sperro;
 	Animacion* animacionPerro;
+	Texture Tshield;
+	Sprite Shield;
 	int vida = 5;
 	bool modoLaser = false;
 	Sprite perro;
@@ -686,6 +688,10 @@ public:
 		Sperro.setTexture(Tperro);
 		Sperro.setPosition(initPos);
 		Sperro.setScale(Vector2f(0.1f, 0.1f));
+
+		Tshield.loadFromFile("Texturas/dogeCartoonShield.png");
+		Shield.setTexture(Tshield);
+		Shield.setScale(0.1f, 0.1f);
 
 		Collision::CreateTextureAndBitmask(TanimPerro, "Texturas/laserAnim.png");
 		perro.setTexture(TanimPerro);
@@ -790,6 +796,8 @@ public:
 
 			updateColisionesJugador(spawn, spawnMejoras, comida, vidas, escudos, Sperro);
 
+			Shield.setPosition(Vector2f(Sperro.getPosition().x - 4.0f, Sperro.getPosition().y - 5.0f));
+
 		}
 		else
 		{
@@ -820,16 +828,21 @@ public:
 			perro.move(movimiento);
 
 			updateColisionesJugador(spawn,spawnMejoras,comida,vidas,escudos, perro);
+
+			Shield.setPosition(Vector2f(perro.getPosition().x - 5.0f, perro.getPosition().y + 20.f));
 		}
 
 	}
 
-	void render(RenderWindow* ventana)
+	void render(RenderWindow* ventana,UIbar* escudos)
 	{
 		if (!modoLaser)
 			ventana->draw(Sperro);
 		else
 			ventana->draw(perro);
+
+		if (escudos->numRectangulos > 0)
+			ventana->draw(Shield);
 	}
 
 };
@@ -939,8 +952,8 @@ public:
 
 	Texto puntText,puntuacionNum,nivelText;
 
-	Nivel(string ruta_fondo, Vector2u ventana_escala,RenderWindow *ventana,Event evento,int numNivel,int laserDelay) 
-	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),20,20),
+	Nivel(string ruta_fondo,RenderWindow *ventana,int numNivel,int laserDelay) 
+	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),50,5),
 		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
 		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
 		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50),
@@ -957,15 +970,16 @@ public:
 		SmenuPausa.setTexture(TmenuPausa);
 		SmenuPausa.setScale(Vector2f(0.6f, 1.f));
 		SmenuPausa.setColor(Color(255,255,255,180));
+	
 
 		SmenuPausa.setPosition(Vector2f(ventana->getSize().x / 2 - SmenuPausa.getGlobalBounds().width / 2, ventana->getSize().y / 2 - SmenuPausa.getGlobalBounds().height / 2));
 
 		pMenu = new UImenu("Texturas/apuntador.png", ventana, Vector2f(SmenuPausa.getPosition().x + 50.f, SmenuPausa.getPosition().y + 30.f),Vector2f(300.f,100.f),"Fuentes/fuente_bonita.ttf",45,Color::Magenta,"Fuentes/fuente_bonita.ttf ",30,Color::Black, 3,opcionesPausa, 40.f, Vector2f(0.3f, 0.3f), 20);
 
-		puntText.setPos(30.f,0.f);
-		puntuacionNum.setPos(puntText.getPos_x() + puntText.getSize_x() / 2 - puntuacionNum.getSize_x(), puntText.getPos_y() + 40.f);
+		puntText.setPos(80.f,5.f);
+		puntuacionNum.setPos(puntText.getPos_x() + puntText.getSize_x() / 2 - puntuacionNum.getSize_x(), puntText.getPos_y() + 35.f);
 
-		nivelText.setPos(puntText.getPos_x() + puntText.getSize_x() + 100.f, nivelText.getPos_y());
+		nivelText.setPos(puntText.getPos_x() + puntText.getSize_x() + 100.f, nivelText.getPos_y() + 10.f);
 
 		perro = new Jugador(Vector2f(40.f, ventana->getSize() .y / 2.f), ventana);
 		balas = new SpawnerBala(ventana, perro, "Texturas/laser.png", Vector2f(0.35f, 0.35f), 10, 10);
@@ -975,7 +989,7 @@ public:
 		
 		Tfondo.loadFromFile(ruta_fondo);
 		Sfondo.setTexture(Tfondo);
-		Sfondo.setScale(Vector2f(ventana_escala.x/Sfondo.getGlobalBounds().width, ventana_escala.y / Sfondo.getGlobalBounds().height));
+		Sfondo.setScale(Vector2f(ventana->getSize().x /Sfondo.getGlobalBounds().width, ventana->getSize().y / Sfondo.getGlobalBounds().height));
 
 		musica.openFromFile("Musica/nivelMusica.ogg");
 		musica.setLoop(true);
@@ -1097,7 +1111,7 @@ public:
 		
 		ventana->draw(Sfondo);
 
-		perro->render(ventana);
+		perro->render(ventana,barraEscudo);
 		gatos.render();
 		balas->render();
 		huesos.render();
@@ -1116,8 +1130,7 @@ public:
 			ventana->draw(SmenuPausa);
 			pMenu->render();
 		}
-			
-
+		
 		ventana->display();
 	}
 };
@@ -1316,9 +1329,9 @@ class Juego
 		ventana->setPosition(Vector2i(250, 50));
 		ventana->setVerticalSyncEnabled(true);
 		
-		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),this->ventana,this->evento);
-		n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento,1,50);
-		menu = new Menu(this->ventana, ventana->getSize(), this->evento);
+		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),ventana,evento);
+		n1 = new Nivel("Texturas/cartoon_room.jpg",ventana,1,50);
+		menu = new Menu(ventana, ventana->getSize(), evento);
 
 		loop();
 	}
@@ -1345,7 +1358,7 @@ class Juego
 			}
 
 			delete n1;
-			n1 = new Nivel("Texturas/cartoon_room.jpg", ventana->getSize(), this->ventana, this->evento, 1, 50);
+			n1 = new Nivel("Texturas/cartoon_room.jpg", ventana, 1, 50);
 		}
 	}
 };
