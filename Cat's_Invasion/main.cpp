@@ -222,6 +222,11 @@ public:
 		texto.setString(mensaje);
 	}
 
+	string getString()
+	{
+		return texto.getString();
+	}
+
 	void setColor(Color color)
 	{
 		texto.setFillColor(color);
@@ -237,11 +242,13 @@ class UImenu {
 		string textura;
 		Vector2f posInicial;
 		RenderWindow* ventana;
-		int opcion = 1, timer, delay,numOpciones;
+		int opcion = 1, delay,numOpciones;
 		float distancia;
 		Vector2f posPunteroinit;
+		bool puntero = true;
 
 	public:
+		int timer;
 
 		Texto* texto[10];
 
@@ -273,6 +280,29 @@ class UImenu {
 			posPunteroinit = Vector2f(texto[1]->getPos_x() - Spuntero.getGlobalBounds().width, texto[1]->getPos_y() + texto[1]->getSize_y() - Spuntero.getGlobalBounds().height / 2);
 			
 			Spuntero.setPosition(posPunteroinit);
+		}
+
+		UImenu(RenderWindow* ventana, Vector2f posInicial, Vector2f offset, string fuenteTitulo, int tamañoTitulo, Color colorTitulo, string fuenteOpciones, int tamañoOpciones, Color colorOpciones, int numOpciones, string opciones[], float distancia)
+		{
+			this->textura = textura;
+			this->ventana = ventana;
+			this->delay = delay;
+			this->distancia = distancia;
+			this->posInicial = posInicial;
+			this->numOpciones = numOpciones;
+			puntero = false;
+
+			texto[0] = new Texto(ventana, fuenteTitulo, opciones[0], colorTitulo, tamañoTitulo);
+			texto[0]->setPos(posInicial.x, posInicial.y);
+
+			texto[1] = new Texto(ventana, fuenteOpciones, opciones[1], colorOpciones, tamañoOpciones);
+			texto[1]->setPos(offset.x, texto[0]->getPos_y() + texto[0]->getSize_y() + offset.y);
+
+			for (int i = 2; i < numOpciones; i++)
+			{
+				texto[i] = new Texto(ventana, fuenteOpciones, opciones[i], colorOpciones, tamañoOpciones);
+				texto[i]->setPos(offset.x, texto[i - 1]->getPos_y() + texto[i - 1]->getSize_y() + distancia);
+			}
 		}
 
 		void update()
@@ -316,7 +346,8 @@ class UImenu {
 
 		void render()
 		{
-			this->ventana->draw(this->Spuntero);
+			if(puntero)
+				this->ventana->draw(this->Spuntero);
 
 			for (int i = 0; i < numOpciones; i++)
 			{
@@ -327,6 +358,14 @@ class UImenu {
 		int getOpc()
 		{
 			return opcion;
+		}
+
+		void setTexto(string datos[],int n)
+		{
+			for (int i = 0; i < n; i++)
+			{
+				texto[i]->setString(datos[i]);
+			}
 		}
 };
 
@@ -987,6 +1026,93 @@ public:
 
 };
 
+class MenuOpciones
+{
+public:
+	Texture Tfondo;
+	Sprite Sfondo;
+	UImenu* menu;
+	string datos[5] = { "Puntuaciones","0","0","0","0" };
+	RenderWindow* ventana;
+	bool menuActivo = true;
+	int timer, delay;
+	Event evento;
+	
+
+	MenuOpciones(RenderWindow* ventana)
+	{
+		this->ventana = ventana;
+		Tfondo.loadFromFile("Texturas/cartoon_finalRoom.jpg");
+		Sfondo.setTexture(Tfondo);
+
+		Sfondo.setScale(Vector2f(ventana->getSize().x / Sfondo.getGlobalBounds().width, ventana->getSize().y / Sfondo.getGlobalBounds().height));
+
+		timer = 0;
+		delay = 20;
+
+		menu = new UImenu(ventana, Vector2f(100.f, 100.f), Vector2f(250.f, 60.f), "Fuentes/fuente_titulo.ttf", 100, Color::Blue, "Fuentes/fuente_normal.ttf", 80, Color::Black, 5, datos, 30.f);
+	}
+
+	void loop()
+	{
+		menuActivo = true;
+		timer = 0;
+
+		while (menuActivo)
+		{
+			update();
+
+			eventos();
+
+			render();
+		}
+	}
+
+	void update()
+	{
+		menu->update();
+
+		if (timer < delay)
+			timer++;
+
+		if (timer >= delay)
+		{
+			if (Keyboard::isKeyPressed(Keyboard::Enter))
+				menuActivo = false;
+		}
+	}
+
+	void render()
+	{
+		ventana->clear();
+		
+		ventana->draw(Sfondo);
+		menu->render();
+
+		ventana->display();
+	}
+
+	void eventos()
+	{
+		while (this->ventana->pollEvent(this->evento))
+		{
+			if (this->evento.type == Event::Closed)
+			{
+				this->ventana->close();
+				exit(1);
+			}
+		}
+	}
+
+	void setDatos(string puntuaciones[],int n)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			puntuaciones[i] = datos[i];
+		}
+	}
+};
+
 
 class Nivel
 {
@@ -1316,12 +1442,13 @@ class Menu
 		Sprite Smenu;
 		bool menu_activo = true;
 
-		string opciones[3] = { "Cat's Invasion","Jugar","Salir" };
+		string opciones[4] = { "Cat's Invasion","Jugar","Puntuaciones","Salir" };
 
 		Texture TdogeMenu;
 		Sprite SdogeMenu;
 		Texture TcatMenu;
 		Sprite ScatMenu;
+		int timer, delay;
 
 	public:
 		UImenu* p1;
@@ -1334,6 +1461,8 @@ class Menu
 			Smenu.setTexture(Tmenu);
 			Smenu.setScale(Vector2f(ventana_escala.x / Smenu.getGlobalBounds().width, ventana_escala.y / Smenu.getGlobalBounds().height));
 
+			delay = 20;
+			timer = delay;
 
 			TdogeMenu.loadFromFile("Texturas/dogeMenu.png");
 			SdogeMenu.setTexture(TdogeMenu);
@@ -1343,7 +1472,7 @@ class Menu
 			ScatMenu.setTexture(TcatMenu);
 			ScatMenu.setScale(SdogeMenu.getGlobalBounds().width / ScatMenu.getGlobalBounds().width, SdogeMenu.getGlobalBounds().height / ScatMenu.getGlobalBounds().height);
 
-			p1 = new UImenu("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f),Vector2f(250.f,60.f),"Fuentes/fuente_titulo.ttf",100,Color::Blue,"Fuentes/fuente_bonita.ttf",80,Color::Black,3,opciones ,30.f, Vector2f(0.4f, 0.4f), 20);
+			p1 = new UImenu("Texturas/apuntador.png", ventana, Vector2f(100.f,100.f),Vector2f(250.f,60.f),"Fuentes/fuente_titulo.ttf",100,Color::Blue,"Fuentes/fuente_bonita.ttf",80,Color::Black,4,opciones ,30.f, Vector2f(0.4f, 0.4f), 20);
 
 			SdogeMenu.setPosition(p1->texto[0]->getPos_x() + p1->texto[0]->getSize_x() * 1.01f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->SdogeMenu.getGlobalBounds().height / 1.5f);
 			ScatMenu.setPosition(p1->texto[0]->getPos_x() - ScatMenu.getGlobalBounds().width * 1.1f, p1->texto[0]->getPos_y() + p1->texto[0]->getSize_y() - this->ScatMenu.getGlobalBounds().height / 1.5f);
@@ -1352,7 +1481,7 @@ class Menu
 		void loop()
 		{
 			menu_activo = true;
-
+			
 			while (menu_activo)
 			{
 				eventos();
@@ -1362,11 +1491,16 @@ class Menu
 				render();
 			}
 
+			timer = 0;
+
 		}
 
 		void update()
 		{
-			if (Keyboard::isKeyPressed(Keyboard::Enter))
+			if (timer < delay)
+				timer++;
+			
+			if (Keyboard::isKeyPressed(Keyboard::Enter) && timer >= delay)
 				menu_activo = false;
 
 			this->p1->update();
@@ -1408,27 +1542,27 @@ class Juego
 	Escena *introduccion;
 	Nivel* n1;
 	Menu *menu;
+	MenuOpciones* opciones;
 	Archivo puntuaciones;
 	bool jugando = true;
 	int catSpawnDelay = 20;
 	int catSpeed = 15;
+	string puntuacion[5];
 
 	public:
 
-	Juego(int altura,int anchura) : puntuaciones("Datos/puntuaciones.txt",10)
+	Juego(int altura,int anchura) : puntuaciones("Datos/puntuaciones.txt",5)
 	{
 		
 		ventana = new RenderWindow(VideoMode(altura, anchura), "Cat's Invasion");
 		ventana->setFramerateLimit(60);
 		ventana->setPosition(Vector2i(250, 50));
 		ventana->setVerticalSyncEnabled(true);
-
-		cout << "Digite el delay de spawneo de los gatos (20 es normal, mas es mayor tiempo): "; cin >> catSpawnDelay;
-		cout << "Digite la velocidad de los gatos (15 es normal, mas es mayor velocidad): "; cin >> catSpawnDelay;
 		
 		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),ventana,evento);
 		n1 = new Nivel("Texturas/cartoon_room.jpg",ventana,1,50,catSpawnDelay,catSpeed);
-		menu = new Menu(ventana, ventana->getSize(), evento);
+		menu = new Menu(ventana, Vector2u(altura, anchura), evento);
+		opciones = new MenuOpciones(ventana);
 
 		loop();
 	}
@@ -1440,13 +1574,25 @@ class Juego
 		{
 			menu->loop();
 
+			puntuaciones.almacenarArchivo(puntuacion);
+			opciones->menu->setTexto(puntuacion, 5);
+
 			switch (menu->p1->getOpc())
 			{
 				case 1:
 					//introduccion->loop();
 					n1->loop();
+
+					if (n1->balas->puntuacion != 0)
+						puntuaciones.escribir((n1->puntuacionNum.texto.getString()));
+
+					delete n1;
+					n1 = new Nivel("Texturas/cartoon_room.jpg", ventana, 1, 50, catSpawnDelay, catSpeed);
 					break;
 				case 2:
+					opciones->loop();
+					break;
+				case 3:
 					ventana->close();
 					jugando = false;
 					break;
@@ -1454,10 +1600,25 @@ class Juego
 					break;
 			}
 
-			puntuaciones.escribir((n1->puntuacionNum.texto.getString()));
 
-			delete n1;
-			n1 = new Nivel("Texturas/cartoon_room.jpg", ventana, 1, 50,catSpawnDelay,catSpeed);
+		}
+	}
+
+	void ordenar(string datos[],int n)
+	{
+		string aux;
+		
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < n - 1; j++)
+			{
+				if (datos[j] < datos[j + 1])
+				{
+					aux = datos[j];
+					datos[j] = datos[j + 1];
+					datos[j + 1] = aux;
+				}
+			}
 		}
 	}
 };

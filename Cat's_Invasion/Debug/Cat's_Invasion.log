@@ -1,6 +1,6 @@
 ﻿  main.cpp
-C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(951,21): warning C4018:  '<': no coinciden signed/unsigned
-C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(953,22): warning C4018:  '<': no coinciden signed/unsigned
-C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(1013,81): warning C4244:  'argumento': conversión de 'int' a 'float'; posible pérdida de datos
-C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(1059,13): warning C4244:  'argumento': conversión de 'time_t' a 'unsigned int'; posible pérdida de datos
+C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(1002,21): warning C4018:  '<': no coinciden signed/unsigned
+C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(1004,22): warning C4018:  '<': no coinciden signed/unsigned
+C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(1151,81): warning C4244:  'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Cat's_Invasion\main.cpp(1197,13): warning C4244:  'argumento': conversión de 'time_t' a 'unsigned int'; posible pérdida de datos
   Cat's_Invasion.vcxproj -> C:\Users\User\Desktop\Desarrollo de videojuegos\Github\Cat's_Invasion\Debug\Cat's_Invasion.exe
