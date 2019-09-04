@@ -14,6 +14,68 @@
 using namespace std;
 using namespace sf;
 
+class Archivo {
+public:
+	ofstream Output;
+	ifstream Input;
+	string titulo;
+	int tamañoLineas;
+
+	Archivo(string titulo, int tamañoLineas)
+	{
+		this->titulo = titulo;
+		this->tamañoLineas = tamañoLineas;
+	}
+
+	void escribir(string texto)
+	{
+		Output.open(titulo, ios::out | ios::app);
+
+		Output << texto << "\n";
+
+		Output.close();
+	}
+
+	void leer(string texto)
+	{
+		Input.open(titulo, ios::in);
+		string linea;
+		while (getline(Input, linea))
+		{
+			cout << linea << "\n";
+		}
+
+		Input.close();
+	}
+
+	void almacenarArchivo(string texto[])
+	{
+		Input.open(titulo, ios::in);
+		string linea;
+		
+		for (int i = 0; i < tamañoLineas; i++)
+		{
+			getline(Input, linea);
+
+			texto[i] = linea;
+		}
+
+		Input.close();
+	}
+
+	void sobreescribir(string texto[])
+	{
+		Output.open(titulo, ios::out | ios::trunc);
+
+		for (int i = 0; i < tamañoLineas; i++)
+		{
+			Output << texto[i] << "\n";
+		}		
+		
+		Output.close();	
+	}
+};
+
 class Animacion {
 private:
 	Vector2u numImagenes;
@@ -100,7 +162,6 @@ class Texto{
 
 private:
 	Font fuente;
-	Text texto;
 	RenderWindow* ventana;
 	int tamaño;
 	string mensaje;
@@ -109,6 +170,7 @@ private:
 	Color color;
 
 public:
+	Text texto;
 	Texto(RenderWindow* ventana,string fuentes,string mensaje,Color color,int tamaño)
 	{
 		this->ventana = ventana;
@@ -158,6 +220,11 @@ public:
 	void setString(string mensaje)
 	{
 		texto.setString(mensaje);
+	}
+
+	void setColor(Color color)
+	{
+		texto.setFillColor(color);
 	}
 };
 
@@ -381,11 +448,12 @@ private:
 	
 	Enemigo enemigo;
 	RenderWindow* ventana;
-	int spawnTimer,spawnDelay;
-	float velocidad;
+	int spawnTimer;
 	float multiplicador = 60.f;
 public:
 	vector<Enemigo> enemigos;
+	float velocidad;
+	int spawnDelay;
 
 	Spawner(RenderWindow* ventana, string textura, Vector2f escala, int spawnDelay,float velocidad) : enemigo(ventana,textura,escala)
 	{
@@ -437,13 +505,13 @@ private:
 	vector <RectangleShape> barra;
 	Vector2f dimension, initPos;
 	Texture textura;
-	Texto texto;
 
 public:
+	Texto texto;
 	int numRectangulos;
 
 	UIbar(RenderWindow* ventana, Vector2f initPos, Vector2f dimension, int numRectangulos,Color colorRelleno,Color colorEsquinas,float tamañoEsquinas,string mensaje,string fuente)
-		: texto(ventana,fuente,mensaje,Color::Black,20)
+		: texto(ventana,fuente,mensaje,Color::Black,15)
 	{
 		this->ventana = ventana;
 		this->numRectangulos = numRectangulos;
@@ -455,7 +523,7 @@ public:
 		cuadrado.setFillColor(colorRelleno);
 		cuadrado.setOutlineColor(colorEsquinas);
 
-		texto.setPos(cuadrado.getPosition().x, cuadrado.getPosition().y - texto.getSize_y() - 20.f);
+		texto.setPos(cuadrado.getPosition().x, cuadrado.getPosition().y - texto.getSize_y() - 15.f);
 		
 
 		for (int i = 0; i < numRectangulos; i++)
@@ -466,7 +534,7 @@ public:
 	}
 
 	UIbar(RenderWindow* ventana, Vector2f initPos, Vector2f dimension, int numRectangulos, string rutaTextura,string mensaje,string fuente)
-		: texto(ventana,fuente, mensaje, Color::Black, 45)
+		: texto(ventana,fuente, mensaje, Color::Black, 40)
 	{
 		this->ventana = ventana;
 		this->numRectangulos = numRectangulos;
@@ -477,7 +545,7 @@ public:
 		cuadrado.setTexture(&textura);
 		cuadrado.setSize(Vector2f(dimension.x, dimension.y));
 
-		texto.setPos(initPos.x, initPos.y - texto.getSize_y() - 20.f);
+		texto.setPos(initPos.x, initPos.y - texto.getSize_y() - 15.f);
 
 		for (int i = 0; i < numRectangulos; i++)
 		{
@@ -753,7 +821,7 @@ public:
 	{
 		multiplicador = 60.f;
 
-		if (Keyboard::isKeyPressed(Keyboard::L) && !modoLaser && laserMode)
+		if (Keyboard::isKeyPressed(Keyboard::Enter) && !modoLaser && laserMode)
 		{
 			perro.setPosition(Vector2f(Sperro.getPosition().x, Sperro.getPosition().y - 25.f));
 			animacionPerro->resetAnim();
@@ -944,6 +1012,7 @@ public:
 	UIbar* barraCargaLaser;
 	Music musica;
 	int multiplo10 = 1;
+	int acumulador1000 = 1000;
 	int laserTimer, laserDelay;
 	bool modoLaser = false;
 	bool pausa = false;
@@ -952,8 +1021,8 @@ public:
 
 	Texto puntText,puntuacionNum,nivelText;
 
-	Nivel(string ruta_fondo,RenderWindow *ventana,int numNivel,int laserDelay) 
-	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),50,5),
+	Nivel(string ruta_fondo,RenderWindow *ventana,int numNivel,int laserDelay,int catSpawnDelay,int catSpeed) 
+	   :gatos(ventana,"Texturas/cartoon_cat.png",Vector2f(0.2f,0.2f),catSpawnDelay,catSpeed),
 		puntText(ventana,"Fuentes/fuente_cartoon.ttf","Puntuación",Color::Black,40),
 		puntuacionNum(ventana, "Fuentes/fuente_cartoon.ttf", "0", Color::Black, 40),
 		nivelText(ventana, "Fuentes/fuente_cartoon.ttf", "Nivel  " + to_string(numNivel), Color::Black, 50),
@@ -1043,6 +1112,19 @@ public:
 		puntuacionNum.setString(to_string(balas->puntuacion));
 	}
 
+	void updateCatSpeed()
+	{
+		if (balas->puntuacion != 0)
+		{
+			if (balas->puntuacion == acumulador1000)
+			{
+				gatos.velocidad += 2;
+				gatos.spawnDelay += 1;
+				acumulador1000 += 2000;
+			}
+		}
+	}
+
 	void updateModoLaser()
 	{
 		if (laserTimer <= laserDelay)
@@ -1081,9 +1163,18 @@ public:
 		comida.update(deltaTime,barraEscudo->numRectangulos < barraVida->numRectangulos);
 		
 		gatos.update(deltaTime);
+		updateCatSpeed();
 
 		updatePuntuacion();
 		updateModoLaser();
+
+		if (barraCargaLaser->numRectangulos == 7)
+			barraCargaLaser->texto.setColor(Color::Color(216,67,25,255));
+		
+
+		if (barraCargaLaser->numRectangulos == 0)
+			barraCargaLaser->texto.setColor(Color::Black);
+		
 		
 	}
 
@@ -1317,20 +1408,26 @@ class Juego
 	Escena *introduccion;
 	Nivel* n1;
 	Menu *menu;
+	Archivo puntuaciones;
 	bool jugando = true;
+	int catSpawnDelay = 20;
+	int catSpeed = 15;
 
 	public:
 
-	Juego(int altura,int anchura)
+	Juego(int altura,int anchura) : puntuaciones("Datos/puntuaciones.txt",10)
 	{
 		
 		ventana = new RenderWindow(VideoMode(altura, anchura), "Cat's Invasion");
 		ventana->setFramerateLimit(60);
 		ventana->setPosition(Vector2i(250, 50));
 		ventana->setVerticalSyncEnabled(true);
+
+		cout << "Digite el delay de spawneo de los gatos (20 es normal, mas es mayor tiempo): "; cin >> catSpawnDelay;
+		cout << "Digite la velocidad de los gatos (15 es normal, mas es mayor velocidad): "; cin >> catSpawnDelay;
 		
 		introduccion = new Escena("Texturas/cartoon_city.jpg", ventana->getSize(),ventana,evento);
-		n1 = new Nivel("Texturas/cartoon_room.jpg",ventana,1,50);
+		n1 = new Nivel("Texturas/cartoon_room.jpg",ventana,1,50,catSpawnDelay,catSpeed);
 		menu = new Menu(ventana, ventana->getSize(), evento);
 
 		loop();
@@ -1357,8 +1454,10 @@ class Juego
 					break;
 			}
 
+			puntuaciones.escribir((n1->puntuacionNum.texto.getString()));
+
 			delete n1;
-			n1 = new Nivel("Texturas/cartoon_room.jpg", ventana, 1, 50);
+			n1 = new Nivel("Texturas/cartoon_room.jpg", ventana, 1, 50,catSpawnDelay,catSpeed);
 		}
 	}
 };
